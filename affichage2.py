@@ -1,3 +1,5 @@
+from xml.dom.minidom import Text
+
 import pygame
 from math import *
 from dico import *
@@ -13,11 +15,12 @@ class Jeu_Affichage:
         self.elemines = []
         self.Clickable = {}
         self.cache_images = {}
+        self.Text = {}
         self.state = "start"
 
         self.Parametre = {
             "TAILLE_STATUS": 100,
-            "MARGE_BASSE_ENTRE_PERSO": 10,
+            "MARGE_BASSE_ENTRE_PERSO": 8.6,
             "GAME_COLOR": (155,155,155),
             "BORDER_RADIUS": 15,
             "TweenSizePerFrame": .01,
@@ -34,33 +37,49 @@ class Jeu_Affichage:
             "DELAY_STATE": .11,
             "IN_TRANSITION": False,
             "Size_BOUTTON": (150, 50),
-            "Size_Bottom": 175
+            "Size_Bottom": 200,
+            "Button" : ["deviner", "BOT DEVINE", "1vs1JOUEUR", "1vs1BOT"],
+            "Adjectif" : {
+                        "Trait Physique": ["cheveux", "yeux", "accessoire", "barbe", "couleur de peau", "sourcil", "expression"],
+                        "Accessoire": ["chapeau", "lunette", "collier", "boucle d'oreille", "casque", "masque", "serre-tete", "cravate"],
+                        "Autres" : ["fond bleu", "fond nature", "fond rouge", "fond jaune", "fond vert", "fond violet", "fond rose"],
+        }
         }
 
         self.Lancer()
 
     def charger_image(self, Data:dict):
+        Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
         perso = Data["Nom"]
         boost = Data.get("Scale") and Data["Scale"] or 1
         Size = Data.get("Size") and Data["Size"] or (self.Parametre["LARGEUR"], self.Parametre["HAUTEUR"])
-        offset = Data.get("Offset") and  Data["Offset"] or (0,0)
+        Offset = Data.get("Offset") and  Data["Offset"] or (Position[0] + (randint(1,2) == 1 and self.xfull or -self.xfull), Position[1])
         goaloffset = Data.get("GoalOffset") and Data["GoalOffset"] or (0,0)
         MaxSizeTween = Data.get("MaxSizeTween") and Data["MaxSizeTween"] or self.Parametre["MaxSizeTween"]
         SpeedTween = Data.get("SpeedTween") and Data["SpeedTween"] or self.Parametre["TweenSizePerFrame"]
         IsButton = Data.get("IsButton") and Data["IsButton"] or False
+        Text:str = Data.get("Text") and Data["Text"] or None
+        Color = Data.get("Color") and Data["Color"] or False
+        PngName = Data.get("Cover") and Data["Cover"] or perso
 
         if perso not in self.cache_images:
             try:
-                chemin = f"img/{perso}.jpg"
-                img = pygame.image.load(chemin).convert()
+                chemin = f"img/{PngName}.jpg"
+                img = pygame.image.load(chemin).convert_alpha()
             except:
                 try:
-                    chemin = f"assets/{perso}.png"
+                    chemin = f"assets/{PngName}.png"
                     img = pygame.image.load(chemin).convert_alpha()
                 except:
-                    img = pygame.Surface((self.Parametre["LARGEUR"], self.Parametre["HAUTEUR"]))
+                    img = pygame.Surface(Size)
                     img.fill(self.Parametre["GAME_COLOR"]) 
-            self.cache_images[perso] = {"img" : img,"boost": 1, "offset" : offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsButton": IsButton}
+            self.cache_images[perso] = {"img" : img,"boost": 1, "offset" : Offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsButton": IsButton, "Color": Color}
+            if self.cache_images[perso].get("Color"):
+                self.Ajouter_Filtre(self.cache_images[perso]["img"], self.cache_images[perso]["Color"], 150)
+            if Text:
+                nom = self.Create_Texte({"Nom": "Normal", "Text": Text, "Size": 36 - len(Text)})
+                img.blit(nom, ((img.get_width() - nom.get_width()) // 2, (img.get_height() - nom.get_height()) // 2)) 
+
         base = self.cache_images[perso]
         return pygame.transform.scale(base["img"], (Size[0] * boost, Size[1] * boost))
 
@@ -72,11 +91,11 @@ class Jeu_Affichage:
             largeur = self.Parametre["NB_PAR_LIGNE"] * (self.Parametre["LARGEUR"] + self.Parametre["ESPACEMENT"]) + self.Parametre["ESPACEMENT"]
             hauteur = lignes * (self.Parametre["HAUTEUR"] + self.Parametre["MARGE_BASSE"]) + self.Parametre["ESPACEMENT"] + self.Parametre["TAILLE_STATUS"] + self.Parametre["Size_Bottom"]
             self.screen = pygame.display.set_mode((largeur, hauteur))
-            pygame.display.set_caption("Jeu du qui-est-ce ?")
-            pygame.display.set_icon(self.charger_image({"Nom": "icon"}))
-            self.txt = pygame.font.Font(None, 28)
-            self.pygame_initialized = True
             self.xfull,self.yfull = pygame.display.get_window_size()
+            pygame.display.set_caption("Jeu du qui-est-ce ?")
+            icon = self.charger_image({"Nom": "logo", "Size": (64, 64)})
+            pygame.display.set_icon(icon)
+            self.pygame_initialized = True            
         self.screen.fill(self.Parametre["GAME_COLOR"])
 
     def surface_arrondi(self, surface, radius):
@@ -138,26 +157,15 @@ class Jeu_Affichage:
     def Add_Boutton(self, Data:dict):
         Nom = Data["Nom"]
         Scale = Data["Scale"]
-        Size = Data["Size"]
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
-        Offset = Data.get("Offset") and  Data["Offset"] or (Position[0] + (randint(1,2) == 1 and self.xfull or -self.xfull), Position[1])
-        GoalOffset = Data.get("GoalOffset") and Data["GoalOffset"] or (0,0)
         notClickable = Data.get("notClickable") and Data["notClickable"] or False
-        MaxSizeTween = Data.get("MaxSizeTween") and Data["MaxSizeTween"] or self.Parametre["MaxSizeTween"]
         SpeedTween = Data.get("SpeedTween") and Data["SpeedTween"] or self.Parametre["TweenSizePerFrame"]
-        IsButton = Data.get("IsButton") and Data["IsButton"] or False
 
         Boost = self.Get_Boost(Nom)
-        img = self.charger_image(
-            {"Nom": Nom, 
-             "Scale": Scale + Boost, 
-             "Size": Size, 
-             "Offset": Offset, 
-             "GoalOffset": GoalOffset, 
-             "MaxSizeTween": MaxSizeTween, 
-             "SpeedTween": SpeedTween,
-             "IsButton": IsButton
-             })
+
+        Data["Scale"] = Scale + Boost
+
+        img = self.charger_image(Data)
         l,h = img.get_size()
         lw,hw = Position
         offsetx,offsety = self.Get_Offset({"perso": Nom, "t": SpeedTween})
@@ -194,7 +202,7 @@ class Jeu_Affichage:
                 img = self.charger_image({"Nom": perso, "Scale": Boost})
                 surf.blit(img, (0, 0))
 
-                nom = self.txt.render(perso, True, (10, 10, 10))
+                nom = self.Create_Texte({"Nom": "Bold_Italic", "Text": perso, "Bold": True, "Italic": True})
 
                 surf.blit(nom, ((Size_Finale[0] - nom.get_width()) // 2, (self.Parametre["HAUTEUR"] * Boost) + 5))
                 surf = self.surface_arrondi(surf, self.Parametre["BORDER_RADIUS"])
@@ -220,6 +228,20 @@ class Jeu_Affichage:
                     width=2,              
                     border_radius=self.Parametre["BORDER_RADIUS"]     
                 )
+
+                pygame.draw.rect(
+                    self.screen,
+                    (0, 0, 0),            
+                    (pos_x, pos_y + img.get_height(), img.get_width(), 2),
+                    width=2,              
+                )
+                pygame.draw.line(
+                                self.screen,
+                                (0, 0, 0),            
+                                (pos_x, pos_y + img.get_height()),
+                                (pos_x + img.get_width() - 2, pos_y + img.get_height()),
+                                3,              
+                                )
                 x += 1
 
     def NewState(self,Next):
@@ -228,8 +250,8 @@ class Jeu_Affichage:
         self.state = Next
 
     def ChangeState(self):
-            if self.state == "start":
-                Boutton = self.Closest_Clickable(pygame.mouse.get_pos())
+            Boutton = self.Closest_Clickable(pygame.mouse.get_pos())
+            if Boutton and self.state == "start":
                 for AllButton in self.cache_images:
                     if self.cache_images[AllButton]["IsButton"]:
                         self.Remove_Collidable(AllButton)
@@ -237,50 +259,69 @@ class Jeu_Affichage:
 
                 Thread(target=lambda: self.NewState(Boutton)).start()
 
+    def CreateColumn_Button(self, Data:dict):
+        list = Data["list"]
+        column = (Data.get("column") and Data["column"] or 1) - 1
+        color = Data.get("color") and Data["color"] or False
+
+        Action_Param = {
+                "X": -self.xfull/2 + self.Parametre["Size_BOUTTON"][0] / 2 , 
+                "Y": self.yfull*.265,
+                "Add_Y": self.Parametre["Size_BOUTTON"][1] + 10,
+                "Max_Button_Per_Column": 4,
+                "Column_Distance":(self.xfull / len(self.Parametre["Adjectif"]) ) * column,
+                "Ecart_Left": self.Parametre["Size_BOUTTON"][0] / 4,
+                "Pourcent_Beetween_Button" : 1.2
+            }
+        
+        x = Action_Param["X"]
+        y = Action_Param["Y"]
+        i = 0
+    
+        for AllButton in list:
+            if i%Action_Param["Max_Button_Per_Column"] == 0 and i != 0:
+                x = Action_Param["X"] + self.Parametre["Size_BOUTTON"][0] * Action_Param["Pourcent_Beetween_Button"]
+                y = Action_Param["Y"]
+
+            self.Add_Boutton({
+                "Nom": AllButton, 
+                "Cover" : "adjectif",
+                "Scale": 0.01, 
+                "Size": self.Parametre["Size_BOUTTON"],
+                "SpeedTween" : .1,
+                "GoalOffset": (x+Action_Param["Column_Distance"] + Action_Param["Ecart_Left"], y),
+                "IsButton": True,
+                "MaxSizeTween": 1.15,
+                "Text": AllButton,
+                "Color" : color,
+                })
+            
+            y += Action_Param["Add_Y"]
+            i += 1
+
+    def Afficher_Action(self):
+        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Trait Physique"], "column": 1, "color": (255, 0, 0)})
+        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Accessoire"], "column": 2, "color": (0, 255, 0)})
+        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Autres"], "column": 3, "color": (0, 0, 255)})
+        
     def Afficher_State(self):
          if self.state == "start":
-                self.Add_Boutton({
-                    "Nom": "deviner", 
-                    "Scale": 1.5, 
-                    "Size": self.Parametre["Size_BOUTTON"],
-                    "MaxSizeTween": 2,
-                    "SpeedTween" : .21,
-                    "GoalOffset": (0, 300),
-                    "IsButton": True
-                    })
-                
-                self.Add_Boutton({
-                    "Nom": "BOT DEVINE", 
-                    "Scale": 1.5, 
-                    "Size": self.Parametre["Size_BOUTTON"],
-                    "MaxSizeTween": 2,
-                    "SpeedTween" : .21,
-                    "GoalOffset": (0, 100),
-                    "IsButton": True
-                    })
-                
-                self.Add_Boutton({
-                    "Nom": "1vs1JOUEUR", 
-                    "Scale": 1.5, 
-                    "Size": self.Parametre["Size_BOUTTON"],
-                    "MaxSizeTween": 2,
-                    "SpeedTween" : .21,
-                    "GoalOffset": (0, -100),
-                    "IsButton": True
-                    })
-                
-                self.Add_Boutton({
-                    "Nom": "1vs1BOT", 
-                    "Scale": 1.5, 
-                    "Size": self.Parametre["Size_BOUTTON"],
-                    "MaxSizeTween": 2,
-                    "SpeedTween" : .21,
-                    "GoalOffset": (0, -300),
-                    "IsButton": True
-                    })
+                pos = 300
+                for AllButton in self.Parametre["Button"]:
+                    self.Add_Boutton({
+                        "Nom": AllButton, 
+                        "Scale": 1.5, 
+                        "Size": self.Parametre["Size_BOUTTON"],
+                        "MaxSizeTween": 2,
+                        "SpeedTween" : .21,
+                        "GoalOffset": (0, pos),
+                        "IsButton": True
+                        })
+                    pos -= 200
                 
          elif self.state == "deviner": 
                self.afficher()
+               self.Afficher_Action()
     
     def Events(self):
         res = True
@@ -290,7 +331,7 @@ class Jeu_Affichage:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.ChangeState()
         return res
-
+        
     def Transition(self):            
         if self.Parametre["IN_TRANSITION"]:
             transition = self.Add_Boutton({
@@ -331,6 +372,19 @@ class Jeu_Affichage:
             pygame.display.flip()
             self.clock.tick(self.Parametre["MAX_FPS"])
 
+    def Create_Texte(self, Data:dict):
+        Nom = Data["Nom"]
+        Size = Data.get("Size") and Data["Size"] or 30
+        Color = Data.get("Color") and Data["Color"] or (10, 10, 10)
+        Italic = Data.get("Italic") and Data["Italic"] or False
+        Bold = Data.get("Bold") and Data["Bold"] or False
+        if not self.Text.get(Nom):
+            self.Text[Nom] = pygame.font.SysFont(None, Size)
+            self.Text[Nom].italic = Italic
+            self.Text[Nom].bold = Bold
+
+        return self.Text[Nom].render(Data["Text"], True, Color)
+    
     def Closest_Clickable(self, MousePos:tuple) -> str:
         for perso, rect in self.Clickable.items():
             if rect.collidepoint(MousePos):
