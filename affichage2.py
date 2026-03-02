@@ -5,7 +5,7 @@ from math import *
 from dico import *
 from random import *
 from time import *
-from threading import *
+from threading import Thread
 
 class Jeu_Affichage:
     def __init__(self):
@@ -17,6 +17,9 @@ class Jeu_Affichage:
         self.cache_images = {}
         self.Text = {}
         self.state = "start"
+        self.state_action = None
+        self.Players = {"Player1": None, "Player2": None}
+        self.IsPlaying = "Player1"
 
         self.Parametre = {
             "TAILLE_STATUS": 100,
@@ -39,11 +42,7 @@ class Jeu_Affichage:
             "Size_BOUTTON": (150, 50),
             "Size_Bottom": 200,
             "Button" : ["deviner", "BOT DEVINE", "1vs1JOUEUR", "1vs1BOT"],
-            "Adjectif" : {
-                        "Trait Physique": ["cheveux", "yeux", "accessoire", "barbe", "couleur de peau", "sourcil", "expression"],
-                        "Accessoire": ["chapeau", "lunette", "collier", "boucle d'oreille", "casque", "masque", "serre-tete", "cravate"],
-                        "Autres" : ["fond bleu", "fond nature", "fond rouge", "fond jaune", "fond vert", "fond violet", "fond rose"],
-        }
+            "Color_List": [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128)],
         }
 
         self.Lancer()
@@ -58,9 +57,13 @@ class Jeu_Affichage:
         MaxSizeTween = Data.get("MaxSizeTween") and Data["MaxSizeTween"] or self.Parametre["MaxSizeTween"]
         SpeedTween = Data.get("SpeedTween") and Data["SpeedTween"] or self.Parametre["TweenSizePerFrame"]
         IsButton = Data.get("IsButton") and Data["IsButton"] or False
+        IsAdjectif = Data.get("IsAdjectif") and Data["IsAdjectif"] or False
         Text:str = Data.get("Text") and Data["Text"] or None
         Color = Data.get("Color") and Data["Color"] or False
         PngName = Data.get("Cover") and Data["Cover"] or perso
+
+        if self.cache_images.get(perso) and self.cache_images[perso].get("Deleted") and self.cache_images[perso]["Deleted"]:
+            del self.cache_images[perso]
 
         if perso not in self.cache_images:
             try:
@@ -73,7 +76,7 @@ class Jeu_Affichage:
                 except:
                     img = pygame.Surface(Size)
                     img.fill(self.Parametre["GAME_COLOR"]) 
-            self.cache_images[perso] = {"img" : img,"boost": 1, "offset" : Offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsButton": IsButton, "Color": Color}
+            self.cache_images[perso] = {"img" : img,"boost": 1, "offset" : Offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsAdjectif": IsAdjectif, "IsButton": IsButton, "Color": Color}
             if self.cache_images[perso].get("Color"):
                 self.Ajouter_Filtre(self.cache_images[perso]["img"], self.cache_images[perso]["Color"], 150)
             if Text:
@@ -132,7 +135,7 @@ class Jeu_Affichage:
         Boost = 1
         if perso in self.cache_images:
             self.cache_images[perso]["boost"] = self.clamp(
-            self.cache_images[perso]["boost"] + (self.Closest_Clickable(pygame.mouse.get_pos()) == perso and self.cache_images[perso]["SpeedTween"] or -self.cache_images[perso]["SpeedTween"]),
+            self.cache_images[perso]["boost"] + (self.Closest_Clickable_Func(pygame.mouse.get_pos()) == perso and self.cache_images[perso]["SpeedTween"] or -self.cache_images[perso]["SpeedTween"]),
             1,
             self.cache_images[perso]["MaxSizeTween"]
         )
@@ -184,7 +187,8 @@ class Jeu_Affichage:
         self.Clickable[Nom] = rect
 
     def Remove_Collidable(self, Nom):
-        del self.Clickable[Nom]
+        if self.Clickable.get(Nom):
+            del self.Clickable[Nom]
 
     def afficher(self):
         """
@@ -249,27 +253,127 @@ class Jeu_Affichage:
         sleep(self.Parametre["DELAY_STATE"])
         self.state = Next
 
-    def ChangeState(self):
-            Boutton = self.Closest_Clickable(pygame.mouse.get_pos())
+    def Remove_All_Button(self):
+        for AllButton in self.cache_images:
+            if self.cache_images[AllButton]["IsButton"]:
+                self.Remove_Collidable(AllButton)
+                self.cache_images[AllButton]["goaloffset"] = (randint(1,2) == 1 and self.xfull or -self.xfull, 0)
+                self.cache_images[AllButton]["Deleted"] = True
+                
+    def Click_Start(self, Boutton):
+        self.Remove_All_Button()
+        Thread(target=lambda: self.NewState(Boutton)).start()
+
+    def Remove_Adjectif(self, Adjectif):
+        Main_Character_Have_Adjectif = False
+
+        for perso, data in PERSONNAGES.items():
+            if perso == self.Players["Player1"]["Character"]:
+                if data.get(self.state_action[1]):
+                    if data.get(self.state_action[1]).get(self.state_action[2]):
+                        if Adjectif in data.get(self.state_action[1]).get(self.state_action[2]):
+                            Main_Character_Have_Adjectif = True  
+
+
+        for perso, data in PERSONNAGES.items():
+            if data.get(self.state_action[1]):
+                if data.get(self.state_action[1]).get(self.state_action[2]):
+                    if not Main_Character_Have_Adjectif:
+                        if Adjectif in data.get(self.state_action[1]).get(self.state_action[2]):
+                            self.elemines.append(perso)
+                    else:
+                         if Adjectif not in data.get(self.state_action[1]).get(self.state_action[2]):
+                            self.elemines.append(perso)
+                else:
+                    self.elemines.append(perso)
+            else:
+                self.elemines.append(perso)
+
+    def Get_Last_Adjectif(self):
+        List_Actual = All_Dico
+        for key in self.state_action[1:]:
+            List_Actual = List_Actual[key]
+        return List_Actual
+
+    def Adjectif_Click(self, Boutton):
+            if isinstance(self.Get_Last_Adjectif(), dict):
+                self.Remove_All_Button()
+                self.state_action.append(Boutton)
+            else:
+                self.Remove_Adjectif(Boutton)
+
+    def Come_Back_Menu(self):
+        self.Remove_All_Button()
+        self.Clickable = {}
+        self.state = "start"
+
+    def Get_Last_State_Action(self):
+         self.Remove_All_Button()
+         self.state_action.pop()
+    
+    def Bouton_Retour(self):
+        if len(self.state_action) > 1:
+            self.Get_Last_State_Action()
+        else:
+            self.Come_Back_Menu()
+
+    def Clickable_Func(self):
+            Boutton = self.Closest_Clickable_Func(pygame.mouse.get_pos())
             if Boutton and self.state == "start":
-                for AllButton in self.cache_images:
-                    if self.cache_images[AllButton]["IsButton"]:
-                        self.Remove_Collidable(AllButton)
-                        self.cache_images[AllButton]["goaloffset"] = (randint(1,2) == 1 and self.xfull or -self.xfull, 0)
+                 self.Click_Start(Boutton)
+            elif Boutton and self.state == "deviner" and  self.cache_images[Boutton]["IsAdjectif"]:
+                 self.Adjectif_Click(Boutton)
+            elif Boutton and self.state == "deviner" and  Boutton == "Retour":
+                 self.Bouton_Retour()
+                 
+    def Create_Column_Button(self, Data:dict):
+        Action_Param=Data["Action_Param"]
+        Button = Data["Button"]
+        color = Data.get("Color") and Data["Color"] or False
+        IsAdjectif = Data.get("IsAdjectif") and Data["IsAdjectif"] or False
 
-                Thread(target=lambda: self.NewState(Boutton)).start()
+        x = Data["X"]
+        y = Data["Y"]
+        i = Data["i"]
 
-    def CreateColumn_Button(self, Data:dict):
+        if i%Action_Param["Max_Button_Per_Column"] == 0 and i != 0:
+                x = Action_Param["X"] + self.Parametre["Size_BOUTTON"][0] * Action_Param["Pourcent_Beetween_Button"]
+                y = Action_Param["Y"]
+
+        Final_Pos = (x+Action_Param["Column_Distance"] + Action_Param["Ecart_Left"], y)
+        self.Add_Boutton({
+            "Nom": Button, 
+            "Cover" : "adjectif",
+            "Scale": 0.01, 
+            "Size": self.Parametre["Size_BOUTTON"],
+            "SpeedTween" : .1,
+            "GoalOffset": Final_Pos,
+            "IsButton": True,
+            "MaxSizeTween": 1.15,
+            "Text": Button,
+            "Color" : color,
+            "IsAdjectif": IsAdjectif
+            })
+        
+        if Button == "Retour":
+            self.cache_images[Button]["goaloffset"] = Final_Pos
+        
+        y += Action_Param["Add_Y"]
+        i += 1
+
+        return (x,y,i)
+    
+    def Create_Column(self, Data:dict):
         list = Data["list"]
         column = (Data.get("column") and Data["column"] or 1) - 1
-        color = Data.get("color") and Data["color"] or False
+        color = Data.get("Color") and Data["Color"] or False
 
         Action_Param = {
                 "X": -self.xfull/2 + self.Parametre["Size_BOUTTON"][0] / 2 , 
                 "Y": self.yfull*.265,
                 "Add_Y": self.Parametre["Size_BOUTTON"][1] + 10,
                 "Max_Button_Per_Column": 4,
-                "Column_Distance":(self.xfull / len(self.Parametre["Adjectif"]) ) * column,
+                "Column_Distance":(self.xfull / len(list) ) * column,
                 "Ecart_Left": self.Parametre["Size_BOUTTON"][0] / 4,
                 "Pourcent_Beetween_Button" : 1.2
             }
@@ -278,50 +382,44 @@ class Jeu_Affichage:
         y = Action_Param["Y"]
         i = 0
     
-        for AllButton in list:
-            if i%Action_Param["Max_Button_Per_Column"] == 0 and i != 0:
-                x = Action_Param["X"] + self.Parametre["Size_BOUTTON"][0] * Action_Param["Pourcent_Beetween_Button"]
-                y = Action_Param["Y"]
+        x,y,i = self.Create_Column_Button({"Action_Param": Action_Param, "Color": (0,0,0), "i": i, "Button": "Retour", "X": x, "Y": y})
 
-            self.Add_Boutton({
-                "Nom": AllButton, 
-                "Cover" : "adjectif",
-                "Scale": 0.01, 
-                "Size": self.Parametre["Size_BOUTTON"],
-                "SpeedTween" : .1,
-                "GoalOffset": (x+Action_Param["Column_Distance"] + Action_Param["Ecart_Left"], y),
-                "IsButton": True,
-                "MaxSizeTween": 1.15,
-                "Text": AllButton,
-                "Color" : color,
-                })
-            
-            y += Action_Param["Add_Y"]
-            i += 1
+        for Button in list:
+           x,y,i = self.Create_Column_Button({"Action_Param": Action_Param, "Button": Button, "Color": self.Parametre["Color_List"][len(self.state_action) - 1], "i": i, "X": x, "Y": y, "IsAdjectif": True})
 
     def Afficher_Action(self):
-        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Trait Physique"], "column": 1, "color": (255, 0, 0)})
-        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Accessoire"], "column": 2, "color": (0, 255, 0)})
-        self.CreateColumn_Button({"list": self.Parametre["Adjectif"]["Autres"], "column": 3, "color": (0, 0, 255)})
-        
+        Color_List = self.Parametre["Color_List"]
+        if len(self.state_action) > 0:
+            self.Create_Column({"list": self.Get_Last_Adjectif(), "column": 0, "color": Color_List[len(self.state_action) - 1]})
+    
+    def deviner_state(self):
+            if not self.Players["Player1"]:
+                    self.Players["Player1"] = {}
+                    self.Players["Player1"]["Character"] = self.Choisir_Personnage(True)
+            if not self.state_action:
+                    self.state_action = [All_Dico]
+            self.afficher()
+            self.Afficher_Action()
+
+    def start_state(self):
+        pos = 300
+        for AllButton in self.Parametre["Button"]:
+            self.Add_Boutton({
+                "Nom": AllButton, 
+                "Scale": 1.5, 
+                "Size": self.Parametre["Size_BOUTTON"],
+                "MaxSizeTween": 2,
+                "SpeedTween" : .21,
+                "GoalOffset": (0, pos),
+                "IsButton": True
+                })
+            pos -= 200
+                
     def Afficher_State(self):
          if self.state == "start":
-                pos = 300
-                for AllButton in self.Parametre["Button"]:
-                    self.Add_Boutton({
-                        "Nom": AllButton, 
-                        "Scale": 1.5, 
-                        "Size": self.Parametre["Size_BOUTTON"],
-                        "MaxSizeTween": 2,
-                        "SpeedTween" : .21,
-                        "GoalOffset": (0, pos),
-                        "IsButton": True
-                        })
-                    pos -= 200
-                
+                self.start_state()
          elif self.state == "deviner": 
-               self.afficher()
-               self.Afficher_Action()
+               self.deviner_state()
     
     def Events(self):
         res = True
@@ -329,7 +427,7 @@ class Jeu_Affichage:
                 if event.type == pygame.QUIT:
                     res = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.ChangeState()
+                    self.Clickable_Func()
         return res
         
     def Transition(self):            
@@ -385,16 +483,18 @@ class Jeu_Affichage:
 
         return self.Text[Nom].render(Data["Text"], True, Color)
     
-    def Closest_Clickable(self, MousePos:tuple) -> str:
+    def Closest_Clickable_Func(self, MousePos:tuple) -> str:
         for perso, rect in self.Clickable.items():
             if rect.collidepoint(MousePos):
                 return perso
 
     def Choisir_Personnage(self, bot:bool) -> str:
+        res = None
         if bot:
-            print("Bot")
+            res = choice(list(PERSONNAGES.keys()))
         else:
             print("zizi")
+        return res
         
-if __name__ == "__main__":
+if __name__ == "__main__": 
     jeu = Jeu_Affichage()
