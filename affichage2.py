@@ -45,7 +45,8 @@ class Jeu_Affichage:
             "Size_Bottom": 200,
             "Button" : ["deviner", "BOT DEVINE", "1vs1JOUEUR", "1vs1BOT"],
             "Color_List": [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128)],
-            "MessageScale" : 7
+            "MessageScale" : 7,
+            "OutlineSize" : 3
         }
 
         self.Lancer()
@@ -66,7 +67,7 @@ class Jeu_Affichage:
         boost = Data.get("Scale") and Data["Scale"] or 1
         Size = Data.get("Size") and Data["Size"] or (self.Parametre["LARGEUR"], self.Parametre["HAUTEUR"])
         Offset = Data.get("Offset") and  Data["Offset"] or (Position[0] + (randint(1,2) == 1 and self.xfull or -self.xfull), Position[1])
-        goaloffset = Data.get("GoalOffset") and Data["GoalOffset"] or (0,0)
+        goaloffset = Data.get("goaloffset") and Data["goaloffset"] or (0,0)
         MaxSizeTween = Data.get("MaxSizeTween") and Data["MaxSizeTween"] or self.Parametre["MaxSizeTween"]
         SpeedTween = Data.get("SpeedTween") and Data["SpeedTween"] or self.Parametre["TweenSizePerFrame"]
         IsButton = Data.get("IsButton") and Data["IsButton"] or False
@@ -77,6 +78,7 @@ class Jeu_Affichage:
         IsFlipBook = Data.get("IsFlipBook") and Data["IsFlipBook"] or False
         DestroyFrame = Data.get("DestroyFrame") and Data["DestroyFrame"] or False
         LowerFrame = Data.get("LowerFrame") and Data["LowerFrame"] or 1
+        TextSize = Data.get("TextSize") and Data["TextSize"] or 40
         
         if self.cache_images.get(perso) and self.cache_images[perso].get("Deleted") and self.cache_images[perso]["Deleted"]:
             del self.cache_images[perso]
@@ -92,12 +94,17 @@ class Jeu_Affichage:
                 except:
                     img = pygame.Surface(Size)
                     img.fill(self.Parametre["GAME_COLOR"]) 
-            self.cache_images[perso] = {"F": LowerFrame, "DestroyFrame": DestroyFrame, "original": img,"IsFlipBook": IsFlipBook,"frame": 0, "img" : img,"boost": 1, "offset" : Offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsAdjectif": IsAdjectif, "IsButton": IsButton, "Color": Color}
+            self.cache_images[perso] = {"DestroyFrame": DestroyFrame, "original": img,"IsFlipBook": IsFlipBook,"frame": 0, "img" : img,"boost": 1, "offset" : Offset, "goaloffset": goaloffset, "MaxSizeTween": MaxSizeTween, "SpeedTween": SpeedTween, "IsAdjectif": IsAdjectif, "IsButton": IsButton, "Color": Color}
             
             if self.cache_images[perso].get("Color"):
                 self.Ajouter_Filtre(self.cache_images[perso]["img"], self.cache_images[perso]["Color"], 150)
             if Text:
-                nom = self.Create_Texte({"Nom": "Normal", "Text": Text, "Size": 36 - len(Text)})
+                if Data.get("Outline") and Data["Outline"]:
+                    OutlineSize = self.Parametre["OutlineSize"]
+                    nom = self.Create_Texte({"Nom": perso + "_outline", "Text": str.upper(Text), "Size": TextSize+ OutlineSize/2 - len(Text), "Color": (255,255,255)})
+                    img.blit(nom, (((img.get_width() - nom.get_width()) // 2 )+ OutlineSize, (img.get_height() - nom.get_height()) // 2))  
+
+                nom = self.Create_Texte({"Nom": perso, "Text": str.upper(Text), "Size": TextSize - len(Text)})
                 img.blit(nom, ((img.get_width() - nom.get_width()) // 2, (img.get_height() - nom.get_height()) // 2)) 
 
         if self.cache_images[perso]["IsFlipBook"]:
@@ -311,24 +318,25 @@ class Jeu_Affichage:
         return res
         
     def Remove_Adjectif(self, Adjectif):
-        self.Adjectif_Used.append(str(self.state_action + [Adjectif]))
-        self.Ajouter_Filtre(self.cache_images[Adjectif]["img"], self.Parametre["ELEMINE_COLOR"], self.Parametre["ELEMINE_OPACITE"])
+        if str(self.state_action + [Adjectif]) not in self.Adjectif_Used:
+            self.Adjectif_Used.append(str(self.state_action + [Adjectif]))
+            self.Ajouter_Filtre(self.cache_images[Adjectif]["img"], self.Parametre["ELEMINE_COLOR"], self.Parametre["ELEMINE_OPACITE"])
 
-        Main_Character_Have_Adjectif = False
+            Main_Character_Have_Adjectif = False
 
-        data = self.Players[self.IsPlaying]["Character"].attributs
-        adj = self.get_adj(data)
-        if self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj}):
-            Main_Character_Have_Adjectif = True  
-  
-        for perso in PERSONNAGES:
-            data = perso.attributs
+            data = self.Players[self.IsPlaying]["Character"].attributs
             adj = self.get_adj(data)
-            HaveAdj = self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj})
-            if Main_Character_Have_Adjectif and not HaveAdj:
-                self.elemines.append(perso.nom)
-            elif not Main_Character_Have_Adjectif and HaveAdj:
-                self.elemines.append(perso.nom)
+            if self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj}):
+                Main_Character_Have_Adjectif = True  
+    
+            for perso in PERSONNAGES:
+                data = perso.attributs
+                adj = self.get_adj(data)
+                HaveAdj = self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj})
+                if Main_Character_Have_Adjectif and not HaveAdj:
+                    self.elemines.append(perso.nom)
+                elif not Main_Character_Have_Adjectif and HaveAdj:
+                    self.elemines.append(perso.nom)
 
     def Get_Last_Adjectif(self):
         List_Actual = self.state_action[0]
@@ -388,7 +396,7 @@ class Jeu_Affichage:
             "Scale": 0.01, 
             "Size": self.Parametre["Size_BOUTTON"],
             "SpeedTween" : .25,
-            "GoalOffset": Final_Pos,
+            "goaloffset": Final_Pos,
             "IsButton": True,
             "MaxSizeTween": 1.15,
             "Text": Button,
@@ -432,6 +440,7 @@ class Jeu_Affichage:
            x,y,i = self.Create_Column_Button({"Action_Param": Action_Param, "Button": Button, "Color": self.Parametre["Color_List"][len(self.state_action) - 1], "i": i, "X": x, "Y": y, "IsAdjectif": True})
 
     def Afficher_Action(self):
+        self.Remove_Button_Start_Collidable()
         Color_List = self.Parametre["Color_List"]
         if len(self.state_action) > 0:
             self.Create_Column({"list": self.Get_Last_Adjectif(), "column": 0, "color": Color_List[len(self.state_action) - 1]})
@@ -445,6 +454,10 @@ class Jeu_Affichage:
             self.afficher()
             self.Afficher_Action()
 
+    def Remove_Button_Start_Collidable(self):
+        for Button in self.Parametre["Button"]:
+            self.Remove_Collidable(Button)
+        
     def start_state(self):
         pos = 300
         for AllButton in self.Parametre["Button"]:
@@ -454,7 +467,7 @@ class Jeu_Affichage:
                 "Size": self.Parametre["Size_BOUTTON"],
                 "MaxSizeTween": 2,
                 "SpeedTween" : .21,
-                "GoalOffset": (0, pos),
+                "goaloffset": (0, pos),
                 "IsButton": True
                 })
             pos -= 200
@@ -472,7 +485,7 @@ class Jeu_Affichage:
                     res = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.Clickable_Func()
-                    self.Message_On_Screen(Text="Bien joué!", Duration=10, Scale=7)
+                    self.Message_On_Screen(Text="Bien joué!")
         return res
 
     def Transition(self):            
@@ -482,7 +495,7 @@ class Jeu_Affichage:
                 "Scale": 1, 
                 "Size": (self.xfull, self.yfull), 
                 "Offset": (-self.xfull*2, 0), 
-                "GoalOffset": (self.xfull*2, 0), 
+                "goaloffset": (self.xfull*2, 0), 
                 "notClickable": True,
                 "SpeedTween" : .15
                 })
@@ -498,7 +511,7 @@ class Jeu_Affichage:
                 "Scale": 1, 
                 "Size": (self.xfull, self.yfull), 
                 "Offset": (0,0), 
-                "GoalOffset": (0,0), 
+                "goaloffset": (0,0), 
                 "notClickable": True,
                 "SpeedTween" : -1
                 })
@@ -518,7 +531,7 @@ class Jeu_Affichage:
 
     def Create_Texte(self, Data:dict):
         Nom = Data["Nom"]
-        Size = Data.get("Size") and Data["Size"] or 30
+        Size = int(Data.get("Size") and Data["Size"] or 30) 
         Color = Data.get("Color") and Data["Color"] or (10, 10, 10)
         Italic = Data.get("Italic") and Data["Italic"] or False
         Bold = Data.get("Bold") and Data["Bold"] or False
@@ -526,7 +539,7 @@ class Jeu_Affichage:
             self.Text[Nom] = pygame.font.SysFont(None, Size)
             self.Text[Nom].italic = Italic
             self.Text[Nom].bold = Bold
-
+        
         return self.Text[Nom].render(Data["Text"], True, Color)
     
     def Closest_Clickable_Func(self, MousePos:tuple) -> str:
@@ -538,34 +551,43 @@ class Jeu_Affichage:
          if self.Parametre.get("MessageData"):
             Scale  = self.Parametre["MessageData"]["Scale"]
             Text  = self.Parametre["MessageData"]["Text"]
-            Reset = self.Parametre["MessageData"]["Reset"]
-            Duration = self.Parametre["MessageData"]["Duration"]
-            DestroyFrame_Smoke = 4*4
-            Speed = .5
+            Duration_Message = self.Parametre["MessageData"]["Duration_Message"]
+            DestroyFrame_Smoke = self.Parametre["MessageData"]["DestroyFrame_Smoke"]
+            Speed = self.Parametre["MessageData"]["Speed"]
+            Position = self.Parametre["MessageData"].get("Position") and self.Parametre["MessageData"]["Position"] or (0, 0)
+            tweenspeed = .01
 
             if not self.cache_images.get(Text + "_Message") or self.cache_images[Text + "_Message"]["DestroyFrame"] > 0:
+
+                if self.cache_images.get(Text + "_Message"):
+                    if self.cache_images[Text + "_Message"]["DestroyFrame"]<= Duration_Message * .75:
+                        self.cache_images[Text + "_Message"]["goaloffset"] = (self.xfull*2, Position[1])
+                    else:
+                        tweenspeed = 1
+                        self.cache_images[Text + "_Message"]["goaloffset"] = Position
+                
                 self.Add_Boutton({
                         "Nom": Text + "_Message", 
                         "Scale": Scale, 
-                        "Size": (self.xfull/(Scale*2), 40), 
-                        "Offset": (0, 0), 
-                        "GoalOffset": (0, 0), 
+                        "Size": (25*Scale, 30*(Scale/2)), 
+                        "Offset": Position, 
+                        "goaloffset": Position, 
                         "notClickable": True,
-                        "SpeedTween" : 1,
+                        "SpeedTween" : tweenspeed,
                         "Text": Text,
-                        "DestroyFrame": 144,
-                        "Cover": "adjectif", 
+                        "TextSize": 125,
+                        "Outline" : True,
+                        "DestroyFrame": Duration_Message,
+                        "Cover": "message", 
                         })
-            else:
-               del self.Parametre["MessageData"]
-                
+                   
             if not self.cache_images.get(Text + "_Smoke") or self.cache_images[Text + "_Smoke"]["DestroyFrame"] > 0:
                 self.Add_Boutton({
                         "Nom": Text + "_Smoke", 
-                        "Scale": Scale, 
-                        "Size": (self.xfull/(Scale*2), 60), 
-                        "Offset": (0, 0), 
-                        "GoalOffset": (0, 0), 
+                        "Scale": Scale + 1.2, 
+                        "Size": (25*Scale, 35*(Scale/2)), 
+                        "Offset": Position, 
+                        "goaloffset": Position, 
                         "notClickable": True,
                         "SpeedTween" : 1,
                         "Cover" : "smoke",
@@ -573,20 +595,27 @@ class Jeu_Affichage:
                         "DestroyFrame":DestroyFrame_Smoke,
                         "LowerFrame" : Speed
                         })
-            
-            if self.Parametre.get("MessageData") and Reset:
-                self.cache_images[Text + "_Message"]["DestroyFrame"] = Duration*60
+
+    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4):
+        DestroyFrame_Smoke = 4*4
+        Speed = .5
+        Duration_Message = Duration*60
+        PourcentX, PourcentY = 0.25, 0.35
+        Position = (self.xfull*PourcentX, self.yfull*PourcentY)
+        if self.cache_images.get(Text + "_Message") and self.cache_images.get(Text + "_Smoke"):
+                self.cache_images[Text + "_Message"]["DestroyFrame"] = Duration_Message
+                self.cache_images[Text + "_Message"]["frame"] = 0
                 self.cache_images[Text + "_Smoke"]["DestroyFrame"] =DestroyFrame_Smoke
                 self.cache_images[Text + "_Smoke"]["frame"] = 0
-                self.Parametre["MessageData"]["Reset"] = False
-
-    def Message_On_Screen(self, Text:str, Duration:float,Scale:int=7):
-        self.Parametre["MessageData"] = {
-            "Scale": Scale,
-            "Text": Text,
-            "Duration": Duration,
-            "Reset" : True
-        }
+        else:
+                self.Parametre["MessageData"] = {
+                    "Scale": Scale,
+                    "Text": Text,
+                    "Duration_Message": Duration_Message,
+                    "DestroyFrame_Smoke": DestroyFrame_Smoke,
+                    "Speed": Speed,
+                    "Position": Position
+                }
 
     def Choisir_Personnage(self, bot:bool) -> str:
         res = None
