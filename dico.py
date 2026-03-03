@@ -1,45 +1,79 @@
-All_Dico = {
-    "cheveux" : {"couleur" : ["brun", "blond"], "longueur" : ["court"], "type" : ["raide"], "forme" : ["frise"]},
-    "yeux" : {"couleur" : ["marron"], "taille" : ["petit"], "forme" : ["rond"], "position" : ["ecarté"], "sourcils" : ["fins"]},
-    "visage" : {"forme" : ["ovale"], "teint" : ["clair"]},
-    "bouche" : {"taille" : ["moyenne"], "forme" : ["fines"]},
-    "nez" : {"taille" : ["moyen"], "forme" : ["droit"]},
-    "oreilles" : {"taille" : ["moyenne"], "forme" : ["rondes"]},
-    "barbe" : {"presence" : [False]},
-    "moustache" : {"presence" : [False]},
-    "accessoires" : {"lunettes" : [False], "chapeau" : [False], "boucle_d_oreille" : [False]}
+dico_attribut = {
+    "cheveux": {
+        "couleur": ["noir", "brun", "chatain", "blond", "roux"],
+        "longueur": ["court", "mi_long", "long"],
+        "texture": ["lisse", "ondule", "boucle", "frise"],
+        "frange": ["Oui", "Non"]
+    },
+    "pilosite_faciale": {
+        "barbe": ["Oui", "Non"],
+        "moustache": ["Oui", "Non"]
+    },
+    "lunettes": ["Oui", "Non"],
+    "accessoires_tete": ["Oui", "Non"],
+    "vetements": {
+        "type_haut": ["t_shirt", "sweat", "chemise", "veste", "maillot", "pull"],
+        "couleur_haut": ["noir", "blanc", "gris", "vert", "bleu", "autre"],
+        "style": ["decontracte", "formel", "sportif", "atypique"]
+    },
+    "expression": {
+        "expression_visage": ["neutre", "sourire", "surpris", "amuse"],
+        "bouche_ouverte": ["Oui", "Non"]
+    },
+    "photo": {
+        "fond": ["lycee", "interieur", "exterieur"],
+        "selfie": ["Oui", "Non"]
+    },
+    "image a un filtre": ["Oui", "Non"]
 }
 
-PERSONNAGES={"Adam":{},
- "Adriano":{},
- "Anaelle":{},
- "Anasbee":{},
- "AnasZ":{},
- "Antoine":{},
- "Auriana":{},
- "Axel":{"cheveux" : {"couleur" : ["blond"]}},
- "Constance":{},
- "Devon":{},
- "Elodie":{},
-"Elyas":{},
- "Francis":{},
-  "Hamza":{},
-  "Imrane":{},
-  "Jayson":{},
-  "Jeremy":{},
-  "Kenzo":{"cheveux" : {"couleur" : ["brun"]}},
-  "Kerian":{"cheveux" : {"couleur" : ["brun"]}},
-   "Leo":{},
-   "Louis":{},
-  "Lucas":{},
-  "Luka":{},           
-  "Miles":{},
-  "Numa":{},
-  "Philippe":{},
-  "Quentin":{},
-  "Sami":{},
-  "Solal":{},
-   "Amelie":{},          
-  "Valentin":{},
-  "Zakaria":{}        
- }
+class Personne:
+    def __init__(self, nom, attributs):
+        self.nom = nom
+        self.attributs = attributs
+
+    def __repr__(self):
+        return f"{self.nom}"
+
+    def afficher(self):
+        print(f"{self.nom}")
+        for categorie, valeur in self.attributs.items():
+            print(f"{categorie} : {valeur}")
+        print("\n")
+        
+        
+adam = Personne("Adam", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+adriano = Personne("Adriano", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+anaelle = Personne("Anaelle", {"cheveux": {"couleur": "blond", "longueur": "long", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Oui", "vetements": {"type_haut": "sweat", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+anasbee = Personne("Anasbee", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "maillot", "couleur_haut": "bleu", "style": "sportif"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+anasZ = Personne("AnasZ", {"cheveux": {"couleur": "noir", "longueur": "long", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "vert", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+antoine = Personne("Antoine", {"cheveux": {"couleur": "brun", "longueur": "mi_long", "texture": "lisse", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "veste", "couleur_haut": "gris", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+auriana = Personne("Auriana", {"cheveux": {"couleur": "blond", "longueur": "mi_long", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Oui", "vetements": {"type_haut": "pull", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Oui"})
+axel = Personne("Axel", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "autre", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+constance = Personne("Constance", {"cheveux": {"couleur": "blond", "longueur": "mi_long", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+devon = Personne("Devon", {"cheveux": {"couleur": "blond", "longueur": "court", "texture": "lisse", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+elodie = Personne("Elodie", {"cheveux": {"couleur": "brun", "longueur": "mi_long", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "sweat", "couleur_haut": "gris", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+elyas = Personne("Elyas", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "bleu", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+francis = Personne("Francis", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "sweat", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+hamza = Personne("Hamza", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "gris", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+imrane = Personne("Imrane", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "pull", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+jayson = Personne("Jayson", {"cheveux": {"couleur": "brun", "longueur": "mi_long", "texture": "lisse", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "veste", "couleur_haut": "vert", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Oui"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+jeremy = Personne("Jeremy", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "t_shirt", "couleur_haut": "vert", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+kenzo = Personne("Kenzo", {"cheveux": {"couleur": "brun", "longueur": "mi_long", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "chemise", "couleur_haut": "blanc", "style": "formel"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+kerian = Personne("Kerian", {"cheveux": {"couleur": "chatain", "longueur": "mi_long", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "veste", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "exterieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+leo = Personne("Leo", {"cheveux": {"couleur": "brun", "longueur": "mi_long", "texture": "boucle", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Oui", "vetements": {"type_haut": "sweat", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "exterieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+louis = Personne("Louis", {"cheveux": {"couleur": "chatain", "longueur": "mi_long", "texture": "ondule", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+lucas = Personne("Lucas", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "surpris", "bouche_ouverte": "Oui"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+luka = Personne("Luka", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "t_shirt", "couleur_haut": "gris", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Non"}, "image a un filtre": "Non"})
+miles = Personne("Miles", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "frise", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "veste", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+numa = Personne("Numa", {"cheveux": {"couleur": "chatain", "longueur": "mi_long", "texture": "ondule", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Non"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat", "couleur_haut": "bleu", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Oui"}, "image a un filtre": "Non"})
+philippe = Personne("Philippe", {"cheveux": {"couleur": "noir", "longueur": "mi_long", "texture": "ondule", "frange": "Oui"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "veste", "couleur_haut": "noir", "style": "formel"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+quentin = Personne("Quentin", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "sweat", "couleur_haut": "noir", "style": "atypique"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+sami = Personne("Sami", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "boucle", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+solal = Personne("Solal", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "ondule", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Non", "accessoires_tete": "Non", "vetements": {"type_haut": "t_shirt", "couleur_haut": "blanc", "style": "decontracte"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "lycee", "selfie": "Non"}, "image a un filtre": "Non"})
+amelie = Personne("Amelie", {"cheveux": {"couleur": "brun", "longueur": "long", "texture": "ondule", "frange": "Non"}, "pilosite_faciale": {"barbe": "Non", "moustache": "Non"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "chemise", "couleur_haut": "noir", "style": "formel"}, "expression": {"expression_visage": "sourire", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+valentin = Personne("Valentin", {"cheveux": {"couleur": "brun", "longueur": "court", "texture": "ondule", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Non", "vetements": {"type_haut": "sweat\t", "couleur_haut": "noir", "style": "decontracte"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "exterieur", "selfie": "Oui"}, "image a un filtre": "Oui"})
+zakaria = Personne("Zakaria", {"cheveux": {"couleur": "noir", "longueur": "court", "texture": "lisse", "frange": "Non"}, "pilosite_faciale": {"barbe": "Oui", "moustache": "Oui"}, "lunettes": "Oui", "accessoires_tete": "Oui", "vetements": {"type_haut": "maillot", "couleur_haut": "blanc", "style": "sportif"}, "expression": {"expression_visage": "neutre", "bouche_ouverte": "Non"}, "photo": {"fond": "interieur", "selfie": "Oui"}, "image a un filtre": "Non"})
+
+
+PERSONNAGES = [adam, adriano, anaelle, anasbee, anasZ, antoine, auriana, axel, constance, devon, elodie, elyas, francis, hamza, imrane, jayson, jeremy, kenzo, kerian, leo, louis, lucas, luka, miles, numa, philippe, quentin, sami, solal, amelie, valentin, zakaria]
