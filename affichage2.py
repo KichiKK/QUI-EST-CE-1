@@ -50,7 +50,7 @@ class Jeu_Affichage:
             "MessageClick": {
                 "oui": ["Bien joué!", "Félicitations!", "Excellent!", "Continue!"], 
                 "non": ["Raté!", "Essaie encore!", "Pas tout à fait!", "Presque!"]},
-            "Anonyme" : True
+            "Anonyme" : False
         }
 
         self.Lancer()
