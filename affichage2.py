@@ -263,9 +263,13 @@ class Jeu_Affichage:
                 Contour = (0, 0, 0)
 
                 adj = self.get_adj(persoclass.attributs)
-                HaveAdj = self.Have_Adjectif({"Adjectif": self.Closest_Clickable_Func(), "Target_Adject": adj})
+                Clickable =self.Closest_Clickable_Func()
+                HaveAdj = self.Have_Adjectif({"Adjectif": Clickable, "Target_Adject": adj})
                 if HaveAdj:
                     Contour = (255,255,0)
+                
+                if self.Players[self.IsPlaying]["Character"] == "INPUT" and Clickable == perso:
+                    Contour = (0,255,0)
 
                 col = x % self.Parametre["NB_PAR_LIGNE"]
                 row = x // self.Parametre["NB_PAR_LIGNE"]
