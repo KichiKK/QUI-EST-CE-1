@@ -50,6 +50,7 @@ class Jeu_Affichage:
             "MessageClick": {
                 "oui": ["Bien joué!", "Félicitations!", "Excellent!", "Continue!"], 
                 "non": ["Raté!", "Essaie encore!", "Pas tout à fait!", "Presque!"]},
+            "Anonyme" : True
         }
 
         self.Lancer()
@@ -83,7 +84,13 @@ class Jeu_Affichage:
         LowerFrame = Data.get("LowerFrame") and Data["LowerFrame"] or 1
         TextSize = Text and (Data.get("TextSize") and Data["TextSize"] or 40)- len(Text)
         TextColor = Data.get("TextColor") and Data["TextColor"] or False
-        
+
+        if self.Parametre["Anonyme"]:
+            for persoclass in PERSONNAGES:
+                persoo = persoclass.nom
+                if persoo == perso:
+                    PngName = "person"
+
         if self.cache_images.get(perso) and self.cache_images[perso].get("Deleted") and self.cache_images[perso]["Deleted"]:
             del self.cache_images[perso]
              
@@ -597,7 +604,7 @@ class Jeu_Affichage:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 self.Clickable_Func()
 
     def Transition(self):            
