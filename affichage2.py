@@ -386,6 +386,7 @@ class Jeu_Affichage:
     
     def Change_Player(self):
         if self.state != "deviner":
+            self.Parametre["IN_TRANSITION"] = True
             self.IsPlaying = self.Get_Other_Player()
     
     def Get_Last_Adjectif(self):
