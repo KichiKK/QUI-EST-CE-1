@@ -18,10 +18,12 @@ class Jeu_Affichage:
         self.cache_images = {}
         self.Text = {}
         self.state = "start"
-        self.state_action = None
-        self.Players = {"Player1": None, "Player2": None}
+        self.state_action = [dico_attribut]
+        self.Players = {"Player1": {}, "Player2": {}}
         self.IsPlaying = "Player1"
         self.Adjectif_Used = []
+        self.Winner_Player = None
+        self.restart = False
 
         self.Parametre = {
             "TAILLE_STATUS": 100,
@@ -46,7 +48,10 @@ class Jeu_Affichage:
             "Button" : ["deviner", "BOT DEVINE", "1vs1JOUEUR", "1vs1BOT"],
             "Color_List": [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128)],
             "MessageScale" : 7,
-            "OutlineSize" : 3
+            "OutlineSize" : 3,
+            "MessageClick": {
+                "oui": ["Bien joué!", "Félicitations!", "Excellent!", "Continue!"], 
+                "non": ["Raté!", "Essaie encore!", "Pas tout à fait!", "Presque!"]},
         }
 
         self.Lancer()
@@ -79,6 +84,7 @@ class Jeu_Affichage:
         DestroyFrame = Data.get("DestroyFrame") and Data["DestroyFrame"] or False
         LowerFrame = Data.get("LowerFrame") and Data["LowerFrame"] or 1
         TextSize = Data.get("TextSize") and Data["TextSize"] or 40
+        TextColor = Data.get("TextColor") and Data["TextColor"] or False
         
         if self.cache_images.get(perso) and self.cache_images[perso].get("Deleted") and self.cache_images[perso]["Deleted"]:
             del self.cache_images[perso]
@@ -101,10 +107,10 @@ class Jeu_Affichage:
             if Text:
                 if Data.get("Outline") and Data["Outline"]:
                     OutlineSize = self.Parametre["OutlineSize"]
-                    nom = self.Create_Texte({"Nom": perso + "_outline", "Text": str.upper(Text), "Size": TextSize+ OutlineSize/2 - len(Text), "Color": (255,255,255)})
+                    nom = self.Create_Texte({"Nom": perso + "_outline", "Text": str.upper(Text), "Size": TextSize+ OutlineSize/2 - len(Text), "Color": (0,0,0)})
                     img.blit(nom, (((img.get_width() - nom.get_width()) // 2 )+ OutlineSize, (img.get_height() - nom.get_height()) // 2))  
 
-                nom = self.Create_Texte({"Nom": perso, "Text": str.upper(Text), "Size": TextSize - len(Text)})
+                nom = self.Create_Texte({"Nom": perso, "Text": str.upper(Text), "Size": TextSize - len(Text), "Color": TextColor})
                 img.blit(nom, ((img.get_width() - nom.get_width()) // 2, (img.get_height() - nom.get_height()) // 2)) 
 
         if self.cache_images[perso]["IsFlipBook"]:
@@ -324,7 +330,8 @@ class Jeu_Affichage:
 
             Main_Character_Have_Adjectif = False
 
-            data = self.Players[self.IsPlaying]["Character"].attributs
+            OtherPlayer = "Player1" if self.IsPlaying == "Player2" else "Player2"
+            data = self.Players[OtherPlayer]["Character"].attributs
             adj = self.get_adj(data)
             if self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj}):
                 Main_Character_Have_Adjectif = True  
@@ -333,10 +340,13 @@ class Jeu_Affichage:
                 data = perso.attributs
                 adj = self.get_adj(data)
                 HaveAdj = self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj})
-                if Main_Character_Have_Adjectif and not HaveAdj:
+                if Main_Character_Have_Adjectif and not HaveAdj and perso.nom not in self.elemines:
                     self.elemines.append(perso.nom)
-                elif not Main_Character_Have_Adjectif and HaveAdj:
+                elif not Main_Character_Have_Adjectif and HaveAdj and perso.nom not in self.elemines:
                     self.elemines.append(perso.nom)
+
+            self.Players[self.IsPlaying]["Score"] = self.Players[self.IsPlaying].get("Score", 0) + (Main_Character_Have_Adjectif and 1 or 0)
+            self.Message_On_Screen(Text=choice(Main_Character_Have_Adjectif and self.Parametre["MessageClick"]["oui"] or self.Parametre["MessageClick"]["non"]), Color=Main_Character_Have_Adjectif and (0, 255, 0) or (255, 0, 0))
 
     def Get_Last_Adjectif(self):
         List_Actual = self.state_action[0]
@@ -351,11 +361,6 @@ class Jeu_Affichage:
             else:
                 self.Remove_Adjectif(str(Boutton))
 
-    def Come_Back_Menu(self):
-        self.Remove_All_Button()
-        self.Clickable = {}
-        self.state = "start"
-
     def Get_Last_State_Action(self):
          self.Remove_All_Button()
          self.state_action.pop()
@@ -364,11 +369,13 @@ class Jeu_Affichage:
         if len(self.state_action) > 1:
             self.Get_Last_State_Action()
         else:
-            self.Come_Back_Menu()
+            self.Reset_Jeu()
 
     def Clickable_Func(self):
             Boutton = self.Closest_Clickable_Func(pygame.mouse.get_pos())
-            if Boutton and self.state == "start":
+            if self.Winner_Player:
+                self.Reset_Jeu()
+            elif Boutton and self.state == "start":
                  self.Click_Start(Boutton)
             elif Boutton and self.state == "deviner" and  self.cache_images[Boutton]["IsAdjectif"]:
                  self.Adjectif_Click(Boutton)
@@ -445,15 +452,33 @@ class Jeu_Affichage:
         if len(self.state_action) > 0:
             self.Create_Column({"list": self.Get_Last_Adjectif(), "column": 0, "color": Color_List[len(self.state_action) - 1]})
     
+    def Set_Personnage(self, Player):
+        if self.Players[Player] == {}:
+                self.Players[Player]["Character"] = self.Choisir_Personnage(True)
+
     def deviner_state(self):
-            if not self.Players["Player1"]:
-                    self.Players["Player1"] = {}
-                    self.Players["Player1"]["Character"] = self.Choisir_Personnage(True)
-            if not self.state_action:
-                    self.state_action = [dico_attribut]
+            self.Set_Personnage("Player2")
             self.afficher()
             self.Afficher_Action()
 
+    def Winner(self):
+        if len(self.elemines) >= len(PERSONNAGES) - 1:
+            Text = self.IsPlaying+ "| Score : " + str(self.Players[self.IsPlaying]["Score"])
+            self.Winner_Player = Text
+            self.Add_Boutton({
+                    "Nom": "winner", 
+                    "Scale": 1, 
+                    "Size": (self.xfull, self.yfull*.55), 
+                    "Offset": (-self.xfull*2, 0), 
+                    "goaloffset": (0, 0), 
+                    "notClickable": True,
+                    "SpeedTween" : .15,
+                    "Text": Text,
+                    "Outline": True,
+                    "TextSize": 150,
+                    "TextColor": (255, 255, 255)
+                    })
+        
     def Remove_Button_Start_Collidable(self):
         for Button in self.Parametre["Button"]:
             self.Remove_Collidable(Button)
@@ -477,16 +502,17 @@ class Jeu_Affichage:
                 self.start_state()
          elif self.state == "deviner": 
                self.deviner_state()
-    
+
+    def Reset_Jeu(self):
+        self.running = False
+        self.restart = True
+
     def Events(self):
-        res = True
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    res = False
+                    self.running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     self.Clickable_Func()
-                    self.Message_On_Screen(Text="Bien joué!")
-        return res
 
     def Transition(self):            
         if self.Parametre["IN_TRANSITION"]:
@@ -517,17 +543,20 @@ class Jeu_Affichage:
                 })
 
     def Lancer(self):
-        running = True
-        while running:
+        self.running = True
+        while self.running:
             self.initialiser_fenetre()
             self.Background()
             self.Transition()
-            running = self.Events()
+            self.Events()
             self.Afficher_State()
-            self.Transition_Out()
+            self.Winner()
             self.Affiche_Message()
+            self.Transition_Out()
             pygame.display.flip()
             self.clock.tick(self.Parametre["MAX_FPS"])
+        if self.restart:
+            Jeu_Affichage()
 
     def Create_Texte(self, Data:dict):
         Nom = Data["Nom"]
@@ -555,6 +584,7 @@ class Jeu_Affichage:
             DestroyFrame_Smoke = self.Parametre["MessageData"]["DestroyFrame_Smoke"]
             Speed = self.Parametre["MessageData"]["Speed"]
             Position = self.Parametre["MessageData"].get("Position") and self.Parametre["MessageData"]["Position"] or (0, 0)
+            Color = self.Parametre["MessageData"].get("Color") and self.Parametre["MessageData"]["Color"] or False
             tweenspeed = .01
 
             if not self.cache_images.get(Text + "_Message") or self.cache_images[Text + "_Message"]["DestroyFrame"] > 0:
@@ -575,7 +605,8 @@ class Jeu_Affichage:
                         "notClickable": True,
                         "SpeedTween" : tweenspeed,
                         "Text": Text,
-                        "TextSize": 125,
+                        "TextSize": 100,
+                        "TextColor": Color,
                         "Outline" : True,
                         "DestroyFrame": Duration_Message,
                         "Cover": "message", 
@@ -596,26 +627,24 @@ class Jeu_Affichage:
                         "LowerFrame" : Speed
                         })
 
-    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4):
+    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0)):
         DestroyFrame_Smoke = 4*4
         Speed = .5
         Duration_Message = Duration*60
         PourcentX, PourcentY = 0.25, 0.35
         Position = (self.xfull*PourcentX, self.yfull*PourcentY)
         if self.cache_images.get(Text + "_Message") and self.cache_images.get(Text + "_Smoke"):
-                self.cache_images[Text + "_Message"]["DestroyFrame"] = Duration_Message
-                self.cache_images[Text + "_Message"]["frame"] = 0
-                self.cache_images[Text + "_Smoke"]["DestroyFrame"] =DestroyFrame_Smoke
-                self.cache_images[Text + "_Smoke"]["frame"] = 0
-        else:
-                self.Parametre["MessageData"] = {
-                    "Scale": Scale,
-                    "Text": Text,
-                    "Duration_Message": Duration_Message,
-                    "DestroyFrame_Smoke": DestroyFrame_Smoke,
-                    "Speed": Speed,
-                    "Position": Position
-                }
+                del self.cache_images[Text + "_Message"]
+                del self.cache_images[Text + "_Smoke"]
+        self.Parametre["MessageData"] = {
+            "Scale": Scale,
+            "Text": Text,
+            "Duration_Message": Duration_Message,
+            "DestroyFrame_Smoke": DestroyFrame_Smoke,
+            "Speed": Speed,
+            "Position": Position,
+            "Color": Color
+        }
 
     def Choisir_Personnage(self, bot:bool) -> str:
         res = None
