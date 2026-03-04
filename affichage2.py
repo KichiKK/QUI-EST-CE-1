@@ -13,7 +13,6 @@ class Jeu_Affichage:
         pygame.init()
         self.pygame_initialized = False
         self.clock = pygame.time.Clock()
-        self.elemines = []
         self.Clickable = {}
         self.cache_images = {}
         self.Text = {}
@@ -21,7 +20,6 @@ class Jeu_Affichage:
         self.state_action = [dico_attribut]
         self.Players = {"Player1": {}, "Player2": {}}
         self.IsPlaying = "Player1"
-        self.Adjectif_Used = []
         self.Winner_Player = None
         self.restart = False
 
@@ -45,7 +43,7 @@ class Jeu_Affichage:
             "IN_TRANSITION": False,
             "Size_BOUTTON": (150, 50),
             "Size_Bottom": 200,
-            "Button" : ["deviner", "BOT DEVINE", "1vs1JOUEUR", "1vs1BOT"],
+            "Button" : ["deviner", "1vs1JOUEUR", "1vs1BOT"],
             "Color_List": [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128)],
             "MessageScale" : 7,
             "OutlineSize" : 3,
@@ -83,7 +81,7 @@ class Jeu_Affichage:
         IsFlipBook = Data.get("IsFlipBook") and Data["IsFlipBook"] or False
         DestroyFrame = Data.get("DestroyFrame") and Data["DestroyFrame"] or False
         LowerFrame = Data.get("LowerFrame") and Data["LowerFrame"] or 1
-        TextSize = Data.get("TextSize") and Data["TextSize"] or 40
+        TextSize = Text and (Data.get("TextSize") and Data["TextSize"] or 40)- len(Text)
         TextColor = Data.get("TextColor") and Data["TextColor"] or False
         
         if self.cache_images.get(perso) and self.cache_images[perso].get("Deleted") and self.cache_images[perso]["Deleted"]:
@@ -107,10 +105,10 @@ class Jeu_Affichage:
             if Text:
                 if Data.get("Outline") and Data["Outline"]:
                     OutlineSize = self.Parametre["OutlineSize"]
-                    nom = self.Create_Texte({"Nom": perso + "_outline", "Text": str.upper(Text), "Size": TextSize+ OutlineSize/2 - len(Text), "Color": (0,0,0)})
+                    nom = self.Create_Texte({"Nom": perso + "_outline", "Text": str.upper(Text), "Size": TextSize+ OutlineSize/2, "Color": (0,0,0)})
                     img.blit(nom, (((img.get_width() - nom.get_width()) // 2 )+ OutlineSize, (img.get_height() - nom.get_height()) // 2))  
 
-                nom = self.Create_Texte({"Nom": perso, "Text": str.upper(Text), "Size": TextSize - len(Text), "Color": TextColor})
+                nom = self.Create_Texte({"Nom": perso, "Text": str.upper(Text), "Size": TextSize, "Color": TextColor})
                 img.blit(nom, ((img.get_width() - nom.get_width()) // 2, (img.get_height() - nom.get_height()) // 2)) 
 
         if self.cache_images[perso]["IsFlipBook"]:
@@ -175,7 +173,7 @@ class Jeu_Affichage:
         Boost = 1
         if perso in self.cache_images:
             self.cache_images[perso]["boost"] = self.clamp(
-            self.cache_images[perso]["boost"] + (self.Closest_Clickable_Func(pygame.mouse.get_pos()) == perso and self.cache_images[perso]["SpeedTween"] or -self.cache_images[perso]["SpeedTween"]),
+            self.cache_images[perso]["boost"] + (self.Closest_Clickable_Func() == perso and self.cache_images[perso]["SpeedTween"] or -self.cache_images[perso]["SpeedTween"]),
             1,
             self.cache_images[perso]["MaxSizeTween"]
         )
@@ -235,6 +233,11 @@ class Jeu_Affichage:
         Affiche le plateau de jeu à l'écran sans bloquer le programme
         """
         x = 0
+        Playing = self.IsPlaying
+        if self.Players[Playing]["Bot"]:
+            Playing = self.Get_Other_Player()
+            
+        elemines = self.Players[Playing].get("Elemines") and self.Players[Playing]["Elemines"]
         for persoclass in PERSONNAGES:
                 perso = persoclass.nom
                 Boost = self.Get_Boost(perso)
@@ -254,8 +257,15 @@ class Jeu_Affichage:
 
                 surf = pygame.transform.scale(surf, Size_Finale)
 
-                if perso in self.elemines:
+                if perso in elemines:
                     self.Ajouter_Filtre(surf, self.Parametre["ELEMINE_COLOR"], self.Parametre["ELEMINE_OPACITE"]) 
+
+                Contour = (0, 0, 0)
+
+                adj = self.get_adj(persoclass.attributs)
+                HaveAdj = self.Have_Adjectif({"Adjectif": self.Closest_Clickable_Func(), "Target_Adject": adj})
+                if HaveAdj:
+                    Contour = (255,255,0)
 
                 col = x % self.Parametre["NB_PAR_LIGNE"]
                 row = x // self.Parametre["NB_PAR_LIGNE"]
@@ -268,7 +278,7 @@ class Jeu_Affichage:
 
                 pygame.draw.rect(
                     self.screen,
-                    (0, 0, 0),            
+                    Contour,            
                     (pos_x, pos_y, Size_Finale[0], Size_Finale[1]),
                     width=2,              
                     border_radius=self.Parametre["BORDER_RADIUS"]     
@@ -276,13 +286,13 @@ class Jeu_Affichage:
 
                 pygame.draw.rect(
                     self.screen,
-                    (0, 0, 0),            
+                    Contour,            
                     (pos_x, pos_y + img.get_height(), img.get_width(), 2),
                     width=2,              
                 )
                 pygame.draw.line(
                                 self.screen,
-                                (0, 0, 0),            
+                                Contour,            
                                 (pos_x, pos_y + img.get_height()),
                                 (pos_x + img.get_width() - 2, pos_y + img.get_height()),
                                 3,              
@@ -318,36 +328,66 @@ class Jeu_Affichage:
         return str(Adjectif) == str(Target_Adject) or (self.IsIterable(Target_Adject) and Adjectif in Target_Adject)
     
     def get_adj(self, data:dict):
-        res = data.get(self.state_action[1])
+        res = self.state_action[0].keys()
         if len(self.state_action) > 2:
             res = data.get(self.state_action[1]).get(self.state_action[2])
+        elif len(self.state_action) > 1:
+            res = data.get(self.state_action[1])
         return res
-        
+    
+    def Random_Adjectif(self):
+        categorie = choice(list(dico_attribut.keys()))
+        valeur = dico_attribut[categorie]
+
+        Chemin = [dico_attribut]
+        if isinstance(valeur, list):
+            Chemin.extend([categorie, choice(valeur)])
+        elif isinstance(valeur, dict):
+            sous_cat = choice(list(valeur.keys()))
+            Chemin.extend([categorie, sous_cat, choice(valeur[sous_cat])])
+        return Chemin
+
     def Remove_Adjectif(self, Adjectif):
-        if str(self.state_action + [Adjectif]) not in self.Adjectif_Used:
-            self.Adjectif_Used.append(str(self.state_action + [Adjectif]))
-            self.Ajouter_Filtre(self.cache_images[Adjectif]["img"], self.Parametre["ELEMINE_COLOR"], self.Parametre["ELEMINE_OPACITE"])
+        if str(self.state_action + [Adjectif]) not in self.Players[self.IsPlaying]["Adjectif_Used"]:
+            elemines = self.Players[self.IsPlaying].get("Elemines") and self.Players[self.IsPlaying]["Elemines"]
+
+            self.Players[self.IsPlaying]["Adjectif_Used"].append(str(self.state_action + [Adjectif]))
 
             Main_Character_Have_Adjectif = False
 
-            OtherPlayer = "Player1" if self.IsPlaying == "Player2" else "Player2"
-            data = self.Players[OtherPlayer]["Character"].attributs
+            data = self.Players[self.Get_Other_Player()]["Character"].attributs
             adj = self.get_adj(data)
+
             if self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj}):
                 Main_Character_Have_Adjectif = True  
     
             for perso in PERSONNAGES:
-                data = perso.attributs
-                adj = self.get_adj(data)
+                adj = self.get_adj(perso.attributs)
                 HaveAdj = self.Have_Adjectif({"Adjectif": Adjectif, "Target_Adject": adj})
-                if Main_Character_Have_Adjectif and not HaveAdj and perso.nom not in self.elemines:
-                    self.elemines.append(perso.nom)
-                elif not Main_Character_Have_Adjectif and HaveAdj and perso.nom not in self.elemines:
-                    self.elemines.append(perso.nom)
+                if Main_Character_Have_Adjectif and not HaveAdj and perso.nom not in elemines:
+                    elemines.append(perso.nom)
+                elif not Main_Character_Have_Adjectif and HaveAdj and perso.nom not in elemines:
+                    elemines.append(perso.nom)
 
             self.Players[self.IsPlaying]["Score"] = self.Players[self.IsPlaying].get("Score", 0) + (Main_Character_Have_Adjectif and 1 or 0)
-            self.Message_On_Screen(Text=choice(Main_Character_Have_Adjectif and self.Parametre["MessageClick"]["oui"] or self.Parametre["MessageClick"]["non"]), Color=Main_Character_Have_Adjectif and (0, 255, 0) or (255, 0, 0))
+            
+            self.BackToChoice()
+            
+            if len(elemines) < len(PERSONNAGES) - 1:
+                self.Message_On_Screen(Text=choice(Main_Character_Have_Adjectif and self.Parametre["MessageClick"]["oui"] or self.Parametre["MessageClick"]["non"]), Color=Main_Character_Have_Adjectif and (0, 255, 0) or (255, 0, 0))
+                self.Change_Player()
 
+    def BackToChoice(self):
+        self.state_action = [dico_attribut]
+        self.Remove_All_Button()
+
+    def Get_Other_Player(self):
+        return self.IsPlaying == "Player2" and "Player1" or "Player2"
+    
+    def Change_Player(self):
+        if self.state != "deviner":
+            self.IsPlaying = self.Get_Other_Player()
+    
     def Get_Last_Adjectif(self):
         List_Actual = self.state_action[0]
         for key in self.state_action[1:]:
@@ -355,11 +395,11 @@ class Jeu_Affichage:
         return List_Actual
 
     def Adjectif_Click(self, Boutton):
-            if isinstance(self.Get_Last_Adjectif(), dict) and (isinstance(self.Get_Last_Adjectif()[Boutton], dict) or isinstance(self.Get_Last_Adjectif()[Boutton], list)):
-                self.Remove_All_Button()
-                self.state_action.append(str(Boutton))
-            else:
-                self.Remove_Adjectif(str(Boutton))
+        if isinstance(self.Get_Last_Adjectif(), dict) and (isinstance(self.Get_Last_Adjectif()[Boutton], dict) or isinstance(self.Get_Last_Adjectif()[Boutton], list)):
+            self.Remove_All_Button()
+            self.state_action.append(str(Boutton))
+        else:
+            self.Remove_Adjectif(str(Boutton))
 
     def Get_Last_State_Action(self):
          self.Remove_All_Button()
@@ -371,17 +411,28 @@ class Jeu_Affichage:
         else:
             self.Reset_Jeu()
 
+    def Get_Character_With_Button(self,Boutton):
+        for perso in PERSONNAGES:
+            if perso.nom == Boutton:
+                return perso
+
     def Clickable_Func(self):
-            Boutton = self.Closest_Clickable_Func(pygame.mouse.get_pos())
-            if self.Winner_Player:
-                self.Reset_Jeu()
-            elif Boutton and self.state == "start":
-                 self.Click_Start(Boutton)
-            elif Boutton and self.state == "deviner" and  self.cache_images[Boutton]["IsAdjectif"]:
-                 self.Adjectif_Click(Boutton)
-            elif Boutton and self.state == "deviner" and  Boutton == "Retour":
-                 self.Bouton_Retour()
-                 
+        Boutton = self.Closest_Clickable_Func()
+        if self.Winner_Player and self.cache_images.get("winner") and self.cache_images["winner"]["frame"] >= 120:
+            self.Reset_Jeu()
+        elif Boutton and self.state == "start":
+                self.Click_Start(Boutton)
+        elif Boutton and self.cache_images[Boutton]["IsAdjectif"]:
+                self.Adjectif_Click(Boutton)
+        elif Boutton and Boutton == "Retour":
+                self.Bouton_Retour()
+        elif Boutton and self.Get_Character_With_Button(Boutton):
+            if self.Players.get(self.IsPlaying) and self.Players[self.IsPlaying].get("Character") and self.Players[self.IsPlaying]["Character"] == "INPUT":
+                    self.Players[self.IsPlaying]["Character"] = self.Get_Character_With_Button(Boutton)
+                
+    def Remove_Filter(self,Button):
+        self.cache_images[Button]["img"] = self.cache_images[Button]["original"].copy()
+
     def Create_Column_Button(self, Data:dict):
         Action_Param=Data["Action_Param"]
         Button = str(Data["Button"])
@@ -411,7 +462,9 @@ class Jeu_Affichage:
             "IsAdjectif": IsAdjectif,
             })
 
-        if str(self.state_action + [Button]) in self.Adjectif_Used and self.cache_images[Button]["frame"] == 1: 
+        self.Remove_Filter(Button)
+
+        if str(self.state_action + [Button]) in self.Players[self.IsPlaying]["Adjectif_Used"]: 
              self.Ajouter_Filtre(self.cache_images[Button]["img"], self.Parametre["ELEMINE_COLOR"], self.Parametre["ELEMINE_OPACITE"])
 
         if Button == "Retour":
@@ -449,21 +502,48 @@ class Jeu_Affichage:
     def Afficher_Action(self):
         self.Remove_Button_Start_Collidable()
         Color_List = self.Parametre["Color_List"]
-        if len(self.state_action) > 0:
+        if len(self.state_action) > 0 and not self.Winner_Player:
             self.Create_Column({"list": self.Get_Last_Adjectif(), "column": 0, "color": Color_List[len(self.state_action) - 1]})
     
-    def Set_Personnage(self, Player):
+    def Setup_Player(self, Player,Bot = False):
         if self.Players[Player] == {}:
-                self.Players[Player]["Character"] = self.Choisir_Personnage(True)
+            self.Players[Player]["Character"] = Bot and choice(list(PERSONNAGES)) or "INPUT"
+            self.Players[Player]["Elemines"] = []
+            self.Players[Player]["Adjectif_Used"] = []
+            self.Players[Player]["Bot"] = Bot
 
-    def deviner_state(self):
-            self.Set_Personnage("Player2")
-            self.afficher()
+    def Playing_Bot(self):
+        if self.Players[self.IsPlaying]["Bot"]:
+            Chemin = self.Random_Adjectif()
+            Adjectif = Chemin.pop()
+            self.state_action = Chemin
+            self.Remove_Adjectif(Adjectif)
+            
+    def GameMode(self, bot):
+        if self.state != "deviner" and self.Players["Player1"]["Character"] == "INPUT":
+            if not self.cache_images.get("Player 1: Choisissez votre personnage" + "_Message"):
+                self.IsPlaying = "Player1"
+                self.Message_On_Screen("Player 1: Choisissez votre personnage", Color=(0,0,255), Duration=20, TextSize=75, Outline = False)
+        elif self.state != "deviner" and not bot and self.Players["Player2"]["Character"] == "INPUT":
+            if not self.cache_images.get("Player 2: Choisissez votre personnage" + "_Message"):
+                self.IsPlaying = "Player2"
+                self.Message_On_Screen("Player 2: Choisissez votre personnage", Color=(0,0,255), Duration=20, TextSize=75, Outline = False)
+        
+        else:
             self.Afficher_Action()
 
+    def deviner_state(self):
+            bot = self.state != "1vs1JOUEUR" and True or False
+            self.Setup_Player("Player1")
+            self.Setup_Player("Player2", bot)
+            self.Playing_Bot()
+            self.afficher()
+            self.GameMode(bot)
+
     def Winner(self):
-        if len(self.elemines) >= len(PERSONNAGES) - 1:
-            Text = self.IsPlaying+ "| Score : " + str(self.Players[self.IsPlaying]["Score"])
+        elemines = self.Players[self.IsPlaying].get("Elemines") and self.Players[self.IsPlaying]["Elemines"]
+        if elemines and len(elemines) >= len(PERSONNAGES) - 1:
+            Text = (self.Players[self.IsPlaying]["Bot"] and "Bot" or self.IsPlaying) + "| Score : " + str(int(1 / (self.Players[self.IsPlaying]["Score"] or 1) * 100))
             self.Winner_Player = Text
             self.Add_Boutton({
                     "Nom": "winner", 
@@ -475,16 +555,16 @@ class Jeu_Affichage:
                     "SpeedTween" : .15,
                     "Text": Text,
                     "Outline": True,
-                    "TextSize": 150,
+                    "TextSize": 140,
                     "TextColor": (255, 255, 255)
-                    })
+                })
         
     def Remove_Button_Start_Collidable(self):
         for Button in self.Parametre["Button"]:
             self.Remove_Collidable(Button)
         
     def start_state(self):
-        pos = 300
+        pos = 200
         for AllButton in self.Parametre["Button"]:
             self.Add_Boutton({
                 "Nom": AllButton, 
@@ -499,9 +579,9 @@ class Jeu_Affichage:
                 
     def Afficher_State(self):
          if self.state == "start":
-                self.start_state()
-         elif self.state == "deviner": 
-               self.deviner_state()
+            self.start_state()
+         else:
+            self.deviner_state()
 
     def Reset_Jeu(self):
         self.running = False
@@ -509,14 +589,14 @@ class Jeu_Affichage:
 
     def Events(self):
         for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.Clickable_Func()
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.Clickable_Func()
 
     def Transition(self):            
         if self.Parametre["IN_TRANSITION"]:
-            transition = self.Add_Boutton({
+            self.Add_Boutton({
                 "Nom": "transition", 
                 "Scale": 1, 
                 "Size": (self.xfull, self.yfull), 
@@ -532,14 +612,15 @@ class Jeu_Affichage:
             self.Parametre["IN_TRANSITION"] = False
     
     def Background(self):
-        transition = self.Add_Boutton({
-                "Nom": "background", 
+        backgroundtext = self.state == "1vs1JOUEUR" and str.lower(self.IsPlaying) or "background"
+        background = self.Add_Boutton({
+                "Nom": backgroundtext, 
                 "Scale": 1, 
                 "Size": (self.xfull, self.yfull), 
                 "Offset": (0,0), 
                 "goaloffset": (0,0), 
                 "notClickable": True,
-                "SpeedTween" : -1
+                "SpeedTween" : -1,
                 })
 
     def Lancer(self):
@@ -571,7 +652,8 @@ class Jeu_Affichage:
         
         return self.Text[Nom].render(Data["Text"], True, Color)
     
-    def Closest_Clickable_Func(self, MousePos:tuple) -> str:
+    def Closest_Clickable_Func(self) -> str:
+        MousePos = pygame.mouse.get_pos()
         for perso, rect in self.Clickable.items():
             if rect.collidepoint(MousePos):
                 return perso
@@ -585,6 +667,8 @@ class Jeu_Affichage:
             Speed = self.Parametre["MessageData"]["Speed"]
             Position = self.Parametre["MessageData"].get("Position") and self.Parametre["MessageData"]["Position"] or (0, 0)
             Color = self.Parametre["MessageData"].get("Color") and self.Parametre["MessageData"]["Color"] or False
+            TextSize = self.Parametre["MessageData"].get("TextSize") and self.Parametre["MessageData"]["TextSize"] or False
+            Outline = self.Parametre["MessageData"].get("Outline") and self.Parametre["MessageData"]["Outline"] or False
             tweenspeed = .01
 
             if not self.cache_images.get(Text + "_Message") or self.cache_images[Text + "_Message"]["DestroyFrame"] > 0:
@@ -605,9 +689,9 @@ class Jeu_Affichage:
                         "notClickable": True,
                         "SpeedTween" : tweenspeed,
                         "Text": Text,
-                        "TextSize": 100,
+                        "TextSize": TextSize,
                         "TextColor": Color,
-                        "Outline" : True,
+                        "Outline" : Outline,
                         "DestroyFrame": Duration_Message,
                         "Cover": "message", 
                         })
@@ -627,7 +711,7 @@ class Jeu_Affichage:
                         "LowerFrame" : Speed
                         })
 
-    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0)):
+    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0), TextSize = 100, Outline = True):
         DestroyFrame_Smoke = 4*4
         Speed = .5
         Duration_Message = Duration*60
@@ -643,16 +727,10 @@ class Jeu_Affichage:
             "DestroyFrame_Smoke": DestroyFrame_Smoke,
             "Speed": Speed,
             "Position": Position,
-            "Color": Color
+            "Color": Color,
+            "TextSize":TextSize,
+            "Outline" : Outline,
         }
-
-    def Choisir_Personnage(self, bot:bool) -> str:
-        res = None
-        if bot:
-            res = choice(list(PERSONNAGES))
-        else:
-            print("zizi")
-        return res
-        
+    
 if __name__ == "__main__": 
     jeu = Jeu_Affichage()
