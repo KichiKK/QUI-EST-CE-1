@@ -528,8 +528,9 @@ class Jeu_Affichage:
             if not self.cache_images.get("Player 2: Choisissez votre personnage" + "_Message"):
                 self.IsPlaying = "Player2"
                 self.Message_On_Screen("Player 2: Choisissez votre personnage", Color=(0,0,255), Duration=20, TextSize=75, Outline = False)
-        
         else:
+            if self.state != "deviner" and len(self.Players["Player1"]["Elemines"]) == 0:
+                self.IsPlaying = "Player1"
             self.Afficher_Action()
 
     def deviner_state(self):
