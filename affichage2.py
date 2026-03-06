@@ -1000,7 +1000,7 @@ class Jeu_Affichage:
                     "LowerFrame" : Speed
                     })
 
-    def Message_On_Screen(self, Texttr, Duration=4,Scale=4, Color = (0,0,0), TextSize = 100, Outline = True):
+    def Message_On_Screen(self, Text, Duration=4,Scale=4, Color = (0,0,0), TextSize = 100, Outline = True):
         """
         Prépare l'affichage d'un message temporaire à l'écran
         :param Text: (str) Le texte à afficher
