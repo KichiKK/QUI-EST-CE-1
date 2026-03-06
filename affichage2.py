@@ -58,7 +58,7 @@ class Jeu_Affichage:
 
         self.Lancer()
 
-    def get_frame(self, img:pygame.Surface, framez, nb_colonnes, nb_lignes):
+    def get_frame(self, img, framez, nb_colonnes, nb_lignes):
         """
         Renvoie une partie précise d'une image donnée
         :param img: (pygame.Surface) Image source
@@ -81,7 +81,7 @@ class Jeu_Affichage:
         
         return img.subsurface((col * w, row * h, w, h))
     
-    def charger_image(self, Data:dict):
+    def charger_image(self, Data):
         """
         Charge une image pour l'affichage
         :param Data: (dict) Un dictionnaire de configuration de l'image
@@ -203,7 +203,7 @@ class Jeu_Affichage:
         else:   
             return n
         
-    def Ajouter_Filtre(self, surface:pygame.Surface, color, opacite):
+    def Ajouter_Filtre(self, surface, color, opacite):
         """
         Ajoute un filtre sur une image
         :param surface: surface à modifier
@@ -218,7 +218,7 @@ class Jeu_Affichage:
         filter = self.surface_arrondi(filter, self.Parametre["BORDER_RADIUS"]) 
         surface.blit(filter, (0, 0))
 
-    def lerp(self, a: float, b: float, t: float) -> float:
+    def lerp(self, a, b, t):
         """
         Renvoie une valeur compris entre deux nombres a et b
         :param a: (int or float) Première valeur
@@ -231,7 +231,7 @@ class Jeu_Affichage:
         assert isinstance(t, (int, float)), "t doit etre un int/float"
         return (1 - t) * a + t * b
     
-    def lerp_tuple(self, data:dict) -> tuple:
+    def lerp_tuple(self, data):
         """
         Renvoie une position intermédiaire entre deux positions
         :param data: (dict) Un dictionnaire contenant les positions de départ et d'arrivée
@@ -244,7 +244,7 @@ class Jeu_Affichage:
 
         return (self.lerp(tuple[0], tupleend[0], t), self.lerp(tuple[1], tupleend[1], t))
 
-    def Get_Boost(self,perso:str) -> int:
+    def Get_Boost(self,perso):
         """
         Renvoie le facteur d'agrandissement d'un élement donné
         :param perso: (str) Le nom de l'élément
@@ -261,7 +261,7 @@ class Jeu_Affichage:
             Boost = self.cache_images[perso]["boost"]
         return Boost
     
-    def Get_Offset(self,data:dict) -> tuple:
+    def Get_Offset(self,data):
         """
         Calcule le décalage progressif d'un élément à l'écran
         :param data:(dict) Un dictionnaire contenant les informations de l'élément
@@ -282,7 +282,7 @@ class Jeu_Affichage:
             Offset = self.cache_images[perso]["offset"]
         return Offset
 
-    def Add_Boutton(self, Data:dict):
+    def Add_Boutton(self, Data):
         """
         Crée et affiche un bouton à l'écran
         :param Data: (dict) dictionnaire contenant les informations du bouton
@@ -310,7 +310,7 @@ class Jeu_Affichage:
             self.Add_Collidable(img, Nom, final_pos)
         return img
     
-    def Add_Collidable(self, Surface:pygame.Surface, Nom, Position):
+    def Add_Collidable(self, Surface, Nom, Position):
         """
         Ajoute une zone cliquable associée à une surface donnée
         :param Surface: La surface concernée
@@ -319,7 +319,7 @@ class Jeu_Affichage:
         """
         assert isinstance(Surface, pygame.Surface), "Surface doit etre une Surface pygame"
         assert isinstance(Nom, str), "Nom doit etre un str"
-        assert isinstance(Position, (tuple, list)) and len(Position) == 2, "Position doit etre un tuple/list de 2 elements"
+        assert isinstance(Position, tuple) and len(Position) == 2, "Position doit etre un tuple/list de 2 elements"
         pos_x,pos_y = Position
         size_x,size_y = Surface.get_size()
         rect = pygame.Rect(pos_x, pos_y, size_x, size_y)
@@ -469,7 +469,7 @@ class Jeu_Affichage:
         Target_Adject = Data["Target_Adject"]
         return str(Adjectif) == str(Target_Adject) or (self.IsIterable(Target_Adject) and Adjectif in Target_Adject)
     
-    def get_adj(self, data:dict):
+    def get_adj(self, data):
         """
         Renvoie la liste des adjectifs correspondant à la catégorie parcourue
         :param data: (dict) Dictionnaire contenant les attributs d'un personnage
@@ -630,7 +630,7 @@ class Jeu_Affichage:
         assert isinstance(Button, str), "Button doit etre un str"
         self.cache_images[Button]["img"] = self.cache_images[Button]["original"].copy()
 
-    def Create_Column_Button(self, Data:dict):
+    def Create_Column_Button(self, Data):
         """
         Crée un bouton dans une colonne de sélection d'adjectifs
         :param Data: (dict) Dictionnaire contenant les paramètres du bouton
@@ -678,7 +678,7 @@ class Jeu_Affichage:
 
         return (x,y,i)
     
-    def Create_Column(self, Data:dict):
+    def Create_Column(self, Data):
         """
         Crée une colonne de boutons correspondant aux adjectifs disponibles
         :param Data: (dict) Dictionnaire contenant la liste des adjectifs et les paramètres d'affichage
@@ -915,7 +915,7 @@ class Jeu_Affichage:
         if self.restart:
             Jeu_Affichage()
 
-    def Create_Texte(self, Data:dict):
+    def Create_Texte(self, Data):
         """
         Crée un texte destiné à être affiché à l'écran
         :param Data: (dict) Dictionnaire contenant les paramètres du texte
@@ -934,7 +934,7 @@ class Jeu_Affichage:
         
         return self.Text[Nom].render(Data["Text"], True, Color)
     
-    def Closest_Clickable_Func(self) -> str:
+    def Closest_Clickable_Func(self):
         """
         Renvoie le nom de l'élément cliquable actuellement situé sous la position de la souris
         :return: (str) Le nom de l'élément détecté sous le curseur de la souris
@@ -1000,7 +1000,7 @@ class Jeu_Affichage:
                     "LowerFrame" : Speed
                     })
 
-    def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0), TextSize = 100, Outline = True):
+    def Message_On_Screen(self, Texttr, Duration=4,Scale=4, Color = (0,0,0), TextSize = 100, Outline = True):
         """
         Prépare l'affichage d'un message temporaire à l'écran
         :param Text: (str) Le texte à afficher
