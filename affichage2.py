@@ -371,12 +371,13 @@ class Jeu_Affichage:
 
                 adj = self.get_adj(persoclass.attributs)
                 Clickable =self.Closest_Clickable_Func()
-                HaveAdj = self.Have_Adjectif({"Adjectif": Clickable, "Target_Adject": adj})
-                if HaveAdj:
-                    Contour = (255,255,0)
-                
-                if self.Players[self.IsPlaying]["Character"] == "INPUT" and Clickable == perso:
-                    Contour = (0,255,0)
+                if Clickable and adj:
+                    HaveAdj = self.Have_Adjectif({"Adjectif": Clickable, "Target_Adject": adj})
+                    if HaveAdj:
+                        Contour = (255,255,0)
+                    
+                    if self.Players[self.IsPlaying]["Character"] == "INPUT" and Clickable == perso:
+                        Contour = (0,255,0)
 
                 col = x % self.Parametre["NB_PAR_LIGNE"]
                 row = x // self.Parametre["NB_PAR_LIGNE"]
@@ -816,16 +817,19 @@ class Jeu_Affichage:
             pos -= 200
 
     def Afficher_Regle_Du_Jeu(self):
-        self.Add_Boutton({
+        """
+        "Permet l'affichage des regles du jeu"
+        """
+        regle = self.Add_Boutton({
             "Nom": "rules", 
             "Scale": .2, 
-            "Size": (self.xfull*.55, self.yfull*.8), 
+            "Size": (self.xfull*.5, self.yfull*.8), 
             "Offset": (-self.xfull*2, 0), 
             "goaloffset": (0, 0), 
             "notClickable": True,
             "SpeedTween" : .08
             })
-            
+
     def Afficher_State(self):
          """
          Affiche l'écran correspondant à l'état actuel du jeu
