@@ -46,7 +46,7 @@ class Jeu_Affichage:
             "IN_TRANSITION": False,
             "Size_BOUTTON": (150, 50),
             "Size_Bottom": 200,
-            "Button" : ["deviner", "1vs1JOUEUR", "1vs1BOT"],
+            "Button" : ["deviner", "1vs1JOUEUR", "1vs1BOT", "rules_button"],
             "Color_List": [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (128, 0, 0), (0, 128, 0), (0, 0, 128)],
             "MessageScale" : 7,
             "OutlineSize" : 3,
@@ -609,7 +609,7 @@ class Jeu_Affichage:
         Analyse le bouton actuellement sélectionné par le joueur et déclenche l'action correspondante
         """
         Boutton = self.Closest_Clickable_Func()
-        if self.Winner_Player and self.cache_images.get("winner") and self.cache_images["winner"]["frame"] >= 120:
+        if self.state == "rules_button" or (self.Winner_Player and self.cache_images.get("winner") and self.cache_images["winner"]["frame"] >= 120):
             self.Reset_Jeu()
         elif Boutton and self.state == "start":
                 self.Click_Start(Boutton)
@@ -802,7 +802,7 @@ class Jeu_Affichage:
         """
         Affiche les boutons du menu principal permettant de choisir le mode de jeu
         """
-        pos = 200
+        pos =300
         for AllButton in self.Parametre["Button"]:
             self.Add_Boutton({
                 "Nom": AllButton, 
@@ -814,13 +814,26 @@ class Jeu_Affichage:
                 "IsButton": True
                 })
             pos -= 200
-                
+
+    def Afficher_Regle_Du_Jeu(self):
+        self.Add_Boutton({
+            "Nom": "rules", 
+            "Scale": .2, 
+            "Size": (self.xfull*.55, self.yfull*.8), 
+            "Offset": (-self.xfull*2, 0), 
+            "goaloffset": (0, 0), 
+            "notClickable": True,
+            "SpeedTween" : .08
+            })
+            
     def Afficher_State(self):
          """
          Affiche l'écran correspondant à l'état actuel du jeu
          """
          if self.state == "start":
             self.start_state()
+         elif self.state == "rules_button":
+            self.Afficher_Regle_Du_Jeu()
          else:
             self.deviner_state()
 
@@ -869,7 +882,7 @@ class Jeu_Affichage:
         Affiche un fond d'écran
         """
         backgroundtext = self.state == "1vs1JOUEUR" and str.lower(self.IsPlaying) or "background"
-        background = self.Add_Boutton({
+        self.Add_Boutton({
                 "Nom": backgroundtext, 
                 "Scale": 1, 
                 "Size": (self.xfull, self.yfull), 
@@ -970,18 +983,18 @@ class Jeu_Affichage:
                    
             if not self.cache_images.get(Text + "_Smoke") or self.cache_images[Text + "_Smoke"]["DestroyFrame"] > 0:
                 self.Add_Boutton({
-                        "Nom": Text + "_Smoke", 
-                        "Scale": Scale + 1.2, 
-                        "Size": (25*Scale, 35*(Scale/2)), 
-                        "Offset": Position, 
-                        "goaloffset": Position, 
-                        "notClickable": True,
-                        "SpeedTween" : 1,
-                        "Cover" : "smoke",
-                        "IsFlipBook": {"colonne" : 4, "ligne": 4},
-                        "DestroyFrame":DestroyFrame_Smoke,
-                        "LowerFrame" : Speed
-                        })
+                    "Nom": Text + "_Smoke", 
+                    "Scale": Scale + 1.2, 
+                    "Size": (25*Scale, 35*(Scale/2)), 
+                    "Offset": Position, 
+                    "goaloffset": Position, 
+                    "notClickable": True,
+                    "SpeedTween" : 1,
+                    "Cover" : "smoke",
+                    "IsFlipBook": {"colonne" : 4, "ligne": 4},
+                    "DestroyFrame":DestroyFrame_Smoke,
+                    "LowerFrame" : Speed
+                    })
 
     def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0), TextSize = 100, Outline = True):
         """
