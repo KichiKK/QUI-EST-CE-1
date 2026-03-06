@@ -67,6 +67,11 @@ class Jeu_Affichage:
         :param nb_lignes: (int) Nombre de lignes du sprite
         :return: (pygame.Surface) Frame extraite
         """
+        assert isinstance(img, pygame.Surface), "img doit etre une Surface pygame"
+        assert isinstance(nb_colonnes, int) and nb_colonnes > 0, "nb_colonnes doit etre un int > 0"
+        assert isinstance(nb_lignes, int) and nb_lignes > 0, "nb_lignes doit etre un int > 0"
+        assert isinstance(framez, (int, float)), "framez doit etre un int ou float"
+
         frame = int(framez)
         w = img.get_width() // nb_colonnes
         h = img.get_height() // nb_lignes
@@ -82,6 +87,7 @@ class Jeu_Affichage:
         :param Data: (dict) Un dictionnaire de configuration de l'image
         :return: (pygame.Surface) Une image prête à être affichée
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
         perso = Data["Nom"]
         boost = Data.get("Scale") and Data["Scale"] or 1
@@ -172,6 +178,8 @@ class Jeu_Affichage:
         :param radius: (int or float) Le rayon des coins arrondis
         :return: L'image modifiée avec coins arrondis
         """
+        assert isinstance(surface, pygame.Surface), "surface doit etre une Surface pygame"
+        assert isinstance(radius, (int, float)) and radius >= 0, "radius doit etre un int/float >= 0"
         border = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         pygame.draw.rect(border, (255,255,255), border.get_rect(), border_radius=radius)
         border.blit(surface, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
@@ -185,6 +193,9 @@ class Jeu_Affichage:
         :param max: (int or float) Valeur maximale
         :return: (int or float) Une valeur comprise entre le minimum et maximum
         """
+        assert isinstance(n, (int, float)), "n doit etre un int/float"
+        assert isinstance(min, (int, float)), "min doit etre un int/float"
+        assert isinstance(max, (int, float)), "max doit etre un int/float"
         if n < min:
             return min
         elif n > max:
@@ -199,6 +210,9 @@ class Jeu_Affichage:
         :param color: couleur du filtre
         :param opacite: niveau de transparence
         """
+        assert isinstance(surface, pygame.Surface), "surface doit etre une Surface pygame"
+        assert isinstance(color, (tuple, list)) and len(color) >= 3, "color doit etre un tuple/list de 3+ valeurs"
+        assert isinstance(opacite, (int, float)) and 0 <= opacite <= 255, "opacite doit etre entre 0 et 255"
         filter = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         filter.fill((color[0], color[1], color[2], opacite))
         filter = self.surface_arrondi(filter, self.Parametre["BORDER_RADIUS"]) 
@@ -212,6 +226,9 @@ class Jeu_Affichage:
         :param t: (float) Portion de la distance entre a et b
         :return: (int ou float) Valeur comprise entre a et b
         """
+        assert isinstance(a, (int, float)), "a doit etre un int/float"
+        assert isinstance(b, (int, float)), "b doit etre un int/float"
+        assert isinstance(t, (int, float)), "t doit etre un int/float"
         return (1 - t) * a + t * b
     
     def lerp_tuple(self, data:dict) -> tuple:
@@ -220,6 +237,7 @@ class Jeu_Affichage:
         :param data: (dict) Un dictionnaire contenant les positions de départ et d'arrivée
         :return: (tuple) Une nouvelle position intermédiaire sous la forme d'un tuple
         """
+        assert isinstance(data, dict), "data doit etre un dict"
         tuple = data["tuple"]
         tupleend = data["tupleend"]
         t = data.get("t") and data["t"] or self.Parametre["TweenMoveLerp"]
@@ -232,6 +250,7 @@ class Jeu_Affichage:
         :param perso: (str) Le nom de l'élément
         :return: (int) La valeur du facteur d'agrandissement
         """
+        assert isinstance(perso, str), "perso doit etre un str"
         Boost = 1
         if perso in self.cache_images:
             self.cache_images[perso]["boost"] = self.clamp(
@@ -248,6 +267,7 @@ class Jeu_Affichage:
         :param data:(dict) Un dictionnaire contenant les informations de l'élément
         :return: (tuple) La position ajustée sous forme de tuple
         """
+        assert isinstance(data, dict), "data doit etre un dict"
         perso = data["perso"]
         t = data.get("t") and data["t"] or self.Parametre["TweenMoveLerp"]
 
@@ -268,6 +288,7 @@ class Jeu_Affichage:
         :param Data: (dict) dictionnaire contenant les informations du bouton
         :return: L'image du bouton affiché
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         Nom = Data["Nom"]
         Scale = Data["Scale"]
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
@@ -296,6 +317,9 @@ class Jeu_Affichage:
         :param Nom: (str) Le nom associé à la zone
         :param Position: (tuple) La position de la surface sous la forme d'un tuple de coordonnée x et y 
         """
+        assert isinstance(Surface, pygame.Surface), "Surface doit etre une Surface pygame"
+        assert isinstance(Nom, str), "Nom doit etre un str"
+        assert isinstance(Position, (tuple, list)) and len(Position) == 2, "Position doit etre un tuple/list de 2 elements"
         pos_x,pos_y = Position
         size_x,size_y = Surface.get_size()
         rect = pygame.Rect(pos_x, pos_y, size_x, size_y)
@@ -307,6 +331,7 @@ class Jeu_Affichage:
         Supprime une zone cliquable
         :param Nom: (str) nom de la zone à supprimer
         """
+        assert isinstance(Nom, str), "Nom doit etre un str"
         if self.Clickable.get(Nom):
             del self.Clickable[Nom]
 
@@ -390,6 +415,7 @@ class Jeu_Affichage:
         Change l'état actuel du jeu
         :param Next: (str) Le nom du nouvel état du jeu
         """
+        assert isinstance(Next, str), "Next doit etre un str"
         self.Parametre["IN_TRANSITION"] = True
         sleep(self.Parametre["DELAY_STATE"])
         self.state = Next
@@ -400,6 +426,7 @@ class Jeu_Affichage:
         Supprime un bouton affiché à l'écran
         :param Button: (str) Nom du bouton à supprimer
         """
+        assert isinstance(Button, str), "Button doit etre un str"
         self.Remove_Collidable(Button)
         self.cache_images[Button]["goaloffset"] = (randint(1,2) == 1 and self.xfull or -self.xfull, 0)
         self.cache_images[Button]["Deleted"] = True
@@ -417,6 +444,7 @@ class Jeu_Affichage:
         Lance le changement d'état après un clic sur un bouton du menu
         :param Boutton:(str) Le nom du bouton sélectionné
         """
+        assert isinstance(Boutton, str), "Boutton doit etre un str"
         self.Remove_All_Button()
         Thread(target=lambda: self.NewState(Boutton)).start()
 
@@ -426,6 +454,7 @@ class Jeu_Affichage:
         :param obj: (any) L'objet à tester
         :return: (True or False) L'objet est une liste ou un dictionnaire, ou False sinon
         """
+        assert obj is not None, "obj ne doit pas etre None"
         return isinstance(obj, list) or isinstance(obj, dict)
 
     def Have_Adjectif(self, Data):
@@ -434,6 +463,7 @@ class Jeu_Affichage:
         :param Data: (dict) Dictionnaire contenant l'adjectif et la personne
         :return: True si l'adjectif correspond, False sinon
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         Adjectif = Data["Adjectif"]
         Target_Adject = Data["Target_Adject"]
         return str(Adjectif) == str(Target_Adject) or (self.IsIterable(Target_Adject) and Adjectif in Target_Adject)
@@ -444,6 +474,7 @@ class Jeu_Affichage:
         :param data: (dict) Dictionnaire contenant les attributs d'un personnage
         :return: Une liste ou valeur correspondant à la catégorie sélectionnée
         """
+        assert isinstance(data, dict), "data doit etre un dict"
         res = self.state_action[0].keys()
         if len(self.state_action) > 2:
             res = data.get(self.state_action[1]).get(self.state_action[2])
@@ -472,6 +503,7 @@ class Jeu_Affichage:
         Compare l'adjectif choisi par le joueur afin d'éliminer les personnages qui ne correspondent pas
         :param Adjectif: (str) Adjectif sélectionné par le joueur
         """
+        assert isinstance(Adjectif, str), "Adjectif doit etre un str"
         if str(self.state_action + [Adjectif]) not in self.Players[self.IsPlaying]["Adjectif_Used"]:
             elemines = self.Players[self.IsPlaying].get("Elemines") and self.Players[self.IsPlaying]["Elemines"]
 
@@ -538,6 +570,7 @@ class Jeu_Affichage:
         Gère le clic sur un bouton correspondant à un adjectif ou une catégorie d'adjectifs
         :param Boutton: (str) Nom du bouton sélectionné
         """
+        assert isinstance(Boutton, str), "Boutton doit etre un str"
         if isinstance(self.Get_Last_Adjectif(), dict) and (isinstance(self.Get_Last_Adjectif()[Boutton], dict) or isinstance(self.Get_Last_Adjectif()[Boutton], list)):
             self.Remove_All_Button()
             self.state_action.append(str(Boutton))
@@ -566,6 +599,7 @@ class Jeu_Affichage:
         :param Boutton: (str) Nom du bouton sélectionné
         :return: Objet personnage correspondant ou None si aucun personnage ne correspond
         """
+        assert isinstance(Boutton, str), "Boutton doit etre un str"
         for perso in PERSONNAGES:
             if perso.nom == Boutton:
                 return perso
@@ -592,6 +626,7 @@ class Jeu_Affichage:
         Supprime le filtre appliqué à une image et restaure son apparence originale
         :param Button: (str) Nom de l'image
         """
+        assert isinstance(Button, str), "Button doit etre un str"
         self.cache_images[Button]["img"] = self.cache_images[Button]["original"].copy()
 
     def Create_Column_Button(self, Data:dict):
@@ -600,6 +635,7 @@ class Jeu_Affichage:
         :param Data: (dict) Dictionnaire contenant les paramètres du bouton
         :return: Nouvelle position et index utilisés pour placer le bouton suivant
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         Action_Param=Data["Action_Param"]
         Button = str(Data["Button"])
         color = Data.get("Color") and Data["Color"] or False
@@ -646,6 +682,7 @@ class Jeu_Affichage:
         Crée une colonne de boutons correspondant aux adjectifs disponibles
         :param Data: (dict) Dictionnaire contenant la liste des adjectifs et les paramètres d'affichage
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         list = Data["list"]
         column = (Data.get("column") and Data["column"] or 1) - 1
         LenList = len(list) + 1
@@ -684,6 +721,8 @@ class Jeu_Affichage:
         :param Player: (str) Le nom du 1er joueur
         :param Bot: (bool) Indique si le 2nd joueur est joué automatiquement, par défaut à False
         """
+        assert isinstance(Player, str), "Player doit etre un str"
+        assert isinstance(Bot, bool), "Bot doit etre un bool"
         if self.Players[Player] == {}:
             self.Players[Player]["Character"] = Bot and choice(list(PERSONNAGES)) or "INPUT"
             self.Players[Player]["Elemines"] = []
@@ -705,6 +744,7 @@ class Jeu_Affichage:
         Gère le déroulement du jeu selon le mode choisi
         :param bot: (bool) Indique si le second joueur est contrôlé par un bot ou non
         """
+        assert isinstance(bot, bool), "bot doit etre un bool"
         if self.state != "deviner" and self.Players["Player1"]["Character"] == "INPUT":
             if not self.cache_images.get("Player 1: Choisissez votre personnage" + "_Message"):
                 self.IsPlaying = "Player1"
@@ -864,6 +904,7 @@ class Jeu_Affichage:
         :param Data: (dict) Dictionnaire contenant les paramètres du texte
         :return: La surface contenant le texte généré
         """
+        assert isinstance(Data, dict), "Data doit etre un dict"
         Nom = Data["Nom"]
         Size = int(Data.get("Size") and Data["Size"] or 30) 
         Color = Data.get("Color") and Data["Color"] or (10, 10, 10)
@@ -953,6 +994,12 @@ class Jeu_Affichage:
         :param Outline: (bool) Indique si le texte possède un contour
         :cu: La durée, la taille du message et de la police doivent être positifs
         """
+        assert isinstance(Text, str), "Text doit etre un str"
+        assert isinstance(Duration, (int, float)) and Duration > 0, "Duration doit etre un int/float > 0"
+        assert isinstance(Scale, (int, float)) and Scale > 0, "Scale doit etre un int/float > 0"
+        assert isinstance(Color, tuple) and len(Color) >= 3, "Color doit etre un tuple de 3+ valeurs"
+        assert isinstance(TextSize, (int, float)) and TextSize > 0, "TextSize doit etre un int/float > 0"
+        assert isinstance(Outline, bool), "Outline doit etre un bool"
         DestroyFrame_Smoke = 4*4
         Speed = .5
         Duration_Message = Duration*60
