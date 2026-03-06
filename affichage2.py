@@ -1,6 +1,3 @@
-from xml.dom.minidom import Text
-
-from h11 import Data
 import pygame
 from math import *
 from dico import *
@@ -9,7 +6,13 @@ from time import *
 from threading import Thread
 
 class Jeu_Affichage:
+    """
+    Classe principale du "Qui-est-ce ?"
+    """
     def __init__(self):
+        """
+        Le constructeur de la classe Jeu_Affichage et initialise le jeu
+        """
         pygame.init()
         self.pygame_initialized = False
         self.clock = pygame.time.Clock()
@@ -56,6 +59,14 @@ class Jeu_Affichage:
         self.Lancer()
 
     def get_frame(self, img:pygame.Surface, framez, nb_colonnes, nb_lignes):
+        """
+        Renvoie une partie précise d'une image donnée
+        :param img: (pygame.Surface) Image source
+        :param framez: (int) Numéro de la frame
+        :param nb_colonnes: (int) Nombre de colonnes du sprite
+        :param nb_lignes: (int) Nombre de lignes du sprite
+        :return: (pygame.Surface) Frame extraite
+        """
         frame = int(framez)
         w = img.get_width() // nb_colonnes
         h = img.get_height() // nb_lignes
@@ -66,6 +77,11 @@ class Jeu_Affichage:
         return img.subsurface((col * w, row * h, w, h))
     
     def charger_image(self, Data:dict):
+        """
+        Charge une image pour l'affichage
+        :param Data: (dict) Un dictionnaire de configuration de l'image
+        :return: (pygame.Surface) Une image prête à être affichée
+        """
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
         perso = Data["Nom"]
         boost = Data.get("Scale") and Data["Scale"] or 1
@@ -132,6 +148,9 @@ class Jeu_Affichage:
         return pygame.transform.scale(self.cache_images[perso]["img"], (Size[0] * boost, Size[1] * boost))
 
     def initialiser_fenetre(self):
+        """
+        Initialise la fenêtre pygame si elle n'est pas encore créée
+        """
         if not self.pygame_initialized:
             pygame.font.init()
             nb_total = len(PERSONNAGES)
@@ -147,12 +166,25 @@ class Jeu_Affichage:
         self.screen.fill(self.Parametre["GAME_COLOR"])
 
     def surface_arrondi(self, surface, radius):
+        """
+        Renvoie l'image avec des bords arrondis
+        :param surface: La surface à modifier
+        :param radius: (int or float) Le rayon des coins arrondis
+        :return: L'image modifiée avec coins arrondis
+        """
         border = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         pygame.draw.rect(border, (255,255,255), border.get_rect(), border_radius=radius)
         border.blit(surface, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
         return border
     
     def clamp(self,n, min, max):
+        """
+        Permet de limiter une valeur entre un minimum et un maximum
+        :param n: (int or float) Valeur à limiter
+        :param min: (int or float) Valeur minimale
+        :param max: (int or float) Valeur maximale
+        :return: (int or float) Une valeur comprise entre le minimum et maximum
+        """
         if n < min:
             return min
         elif n > max:
@@ -161,15 +193,33 @@ class Jeu_Affichage:
             return n
         
     def Ajouter_Filtre(self, surface:pygame.Surface, color, opacite):
+        """
+        Ajoute un filtre sur une image
+        :param surface: surface à modifier
+        :param color: couleur du filtre
+        :param opacite: niveau de transparence
+        """
         filter = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         filter.fill((color[0], color[1], color[2], opacite))
         filter = self.surface_arrondi(filter, self.Parametre["BORDER_RADIUS"]) 
         surface.blit(filter, (0, 0))
 
     def lerp(self, a: float, b: float, t: float) -> float:
+        """
+        Renvoie une valeur compris entre deux nombres a et b
+        :param a: (int or float) Première valeur
+        :param b: (int or float) Seconde valeur
+        :param t: (float) Portion de la distance entre a et b
+        :return: (int ou float) Valeur comprise entre a et b
+        """
         return (1 - t) * a + t * b
     
     def lerp_tuple(self, data:dict) -> tuple:
+        """
+        Renvoie une position intermédiaire entre deux positions
+        :param data: (dict) Un dictionnaire contenant les positions de départ et d'arrivée
+        :return: (tuple) Une nouvelle position intermédiaire sous la forme d'un tuple
+        """
         tuple = data["tuple"]
         tupleend = data["tupleend"]
         t = data.get("t") and data["t"] or self.Parametre["TweenMoveLerp"]
@@ -177,6 +227,11 @@ class Jeu_Affichage:
         return (self.lerp(tuple[0], tupleend[0], t), self.lerp(tuple[1], tupleend[1], t))
 
     def Get_Boost(self,perso:str) -> int:
+        """
+        Renvoie le facteur d'agrandissement d'un élement donné
+        :param perso: (str) Le nom de l'élément
+        :return: (int) La valeur du facteur d'agrandissement
+        """
         Boost = 1
         if perso in self.cache_images:
             self.cache_images[perso]["boost"] = self.clamp(
@@ -188,6 +243,11 @@ class Jeu_Affichage:
         return Boost
     
     def Get_Offset(self,data:dict) -> tuple:
+        """
+        Calcule le décalage progressif d'un élément à l'écran
+        :param data:(dict) Un dictionnaire contenant les informations de l'élément
+        :return: (tuple) La position ajustée sous forme de tuple
+        """
         perso = data["perso"]
         t = data.get("t") and data["t"] or self.Parametre["TweenMoveLerp"]
 
@@ -203,6 +263,11 @@ class Jeu_Affichage:
         return Offset
 
     def Add_Boutton(self, Data:dict):
+        """
+        Crée et affiche un bouton à l'écran
+        :param Data: (dict) dictionnaire contenant les informations du bouton
+        :return: L'image du bouton affiché
+        """
         Nom = Data["Nom"]
         Scale = Data["Scale"]
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
@@ -225,6 +290,12 @@ class Jeu_Affichage:
         return img
     
     def Add_Collidable(self, Surface:pygame.Surface, Nom, Position):
+        """
+        Ajoute une zone cliquable associée à une surface donnée
+        :param Surface: La surface concernée
+        :param Nom: (str) Le nom associé à la zone
+        :param Position: (tuple) La position de la surface sous la forme d'un tuple de coordonnée x et y 
+        """
         pos_x,pos_y = Position
         size_x,size_y = Surface.get_size()
         rect = pygame.Rect(pos_x, pos_y, size_x, size_y)
@@ -232,6 +303,10 @@ class Jeu_Affichage:
         self.Clickable[Nom] = rect
 
     def Remove_Collidable(self, Nom):
+        """
+        Supprime une zone cliquable
+        :param Nom: (str) nom de la zone à supprimer
+        """
         if self.Clickable.get(Nom):
             del self.Clickable[Nom]
 
@@ -311,34 +386,64 @@ class Jeu_Affichage:
                 x += 1
 
     def NewState(self,Next):
+        """
+        Change l'état actuel du jeu
+        :param Next: (str) Le nom du nouvel état du jeu
+        """
         self.Parametre["IN_TRANSITION"] = True
         sleep(self.Parametre["DELAY_STATE"])
         self.state = Next
         self.Remove_All_Button()
 
     def Remove_Button(self, Button):
+        """
+        Supprime un bouton affiché à l'écran
+        :param Button: (str) Nom du bouton à supprimer
+        """
         self.Remove_Collidable(Button)
         self.cache_images[Button]["goaloffset"] = (randint(1,2) == 1 and self.xfull or -self.xfull, 0)
         self.cache_images[Button]["Deleted"] = True
         
     def Remove_All_Button(self):
+        """
+        Supprime tous les boutons actuellement présents à l'écran
+        """
         for Button in self.cache_images:
             if self.cache_images[Button]["IsButton"]:
                self.Remove_Button(Button)
                 
     def Click_Start(self, Boutton):
+        """
+        Lance le changement d'état après un clic sur un bouton du menu
+        :param Boutton:(str) Le nom du bouton sélectionné
+        """
         self.Remove_All_Button()
         Thread(target=lambda: self.NewState(Boutton)).start()
 
     def IsIterable(self, obj):
+        """
+        Prédicat renvoyant si l'objet est une liste ou un dictionnaire ou non
+        :param obj: (any) L'objet à tester
+        :return: (True or False) L'objet est une liste ou un dictionnaire, ou False sinon
+        """
         return isinstance(obj, list) or isinstance(obj, dict)
 
     def Have_Adjectif(self, Data):
+        """
+        Prédicat renvoyant si un adjectif correspond à la personne donnée
+        :param Data: (dict) Dictionnaire contenant l'adjectif et la personne
+        :return: True si l'adjectif correspond, False sinon
+        """
         Adjectif = Data["Adjectif"]
         Target_Adject = Data["Target_Adject"]
         return str(Adjectif) == str(Target_Adject) or (self.IsIterable(Target_Adject) and Adjectif in Target_Adject)
     
     def get_adj(self, data:dict):
+        """
+        Renvoie la liste des adjectifs correspondant à la catégorie parcourue
+        :param data: (dict) Dictionnaire contenant les attributs d'un personnage
+        :return: Une liste ou valeur correspondant à la catégorie sélectionnée
+        """
         res = self.state_action[0].keys()
         if len(self.state_action) > 2:
             res = data.get(self.state_action[1]).get(self.state_action[2])
@@ -347,6 +452,10 @@ class Jeu_Affichage:
         return res
     
     def Random_Adjectif(self):
+        """
+        Sélectionne un adjectif aléatoirement dans le dictionnaire des attributs dico_attribut
+        :return: Le chemin complet menant à cet adjectif
+        """
         categorie = choice(list(dico_attribut.keys()))
         valeur = dico_attribut[categorie]
 
@@ -359,6 +468,10 @@ class Jeu_Affichage:
         return Chemin
 
     def Remove_Adjectif(self, Adjectif):
+        """
+        Compare l'adjectif choisi par le joueur afin d'éliminer les personnages qui ne correspondent pas
+        :param Adjectif: (str) Adjectif sélectionné par le joueur
+        """
         if str(self.state_action + [Adjectif]) not in self.Players[self.IsPlaying]["Adjectif_Used"]:
             elemines = self.Players[self.IsPlaying].get("Elemines") and self.Players[self.IsPlaying]["Elemines"]
 
@@ -389,24 +502,42 @@ class Jeu_Affichage:
                 self.Change_Player()
 
     def BackToChoice(self):
+        """
+        Retourne au choix de l'adjectif précédent et supprime les boutons affichés
+        """
         self.state_action = [dico_attribut]
         self.Remove_All_Button()
 
     def Get_Other_Player(self):
+        """
+        Renvoie le nom de l'autre joueur
+        :return: (str) Le nom de l'autre joueur
+        """
         return self.IsPlaying == "Player2" and "Player1" or "Player2"
     
     def Change_Player(self):
+        """
+        Permet de passer au joueur suivant
+        """
         if self.state != "deviner":
             self.Parametre["IN_TRANSITION"] = True
             self.IsPlaying = self.Get_Other_Player()
     
     def Get_Last_Adjectif(self):
+        """
+        Renvoie la catégorie ou la liste d'adjectifs correspondant à la position actuelle dans le dictionnaire d'attributs
+        :return: Liste ou dictionnaire contenant les adjectifs disponibles
+        """
         List_Actual = self.state_action[0]
         for key in self.state_action[1:]:
             List_Actual = List_Actual[key]
         return List_Actual
 
     def Adjectif_Click(self, Boutton):
+        """
+        Gère le clic sur un bouton correspondant à un adjectif ou une catégorie d'adjectifs
+        :param Boutton: (str) Nom du bouton sélectionné
+        """
         if isinstance(self.Get_Last_Adjectif(), dict) and (isinstance(self.Get_Last_Adjectif()[Boutton], dict) or isinstance(self.Get_Last_Adjectif()[Boutton], list)):
             self.Remove_All_Button()
             self.state_action.append(str(Boutton))
@@ -414,21 +545,35 @@ class Jeu_Affichage:
             self.Remove_Adjectif(str(Boutton))
 
     def Get_Last_State_Action(self):
+         """
+         Revient à l'étape précédente dans la navigation des catégories d'adjectifs
+         """
          self.Remove_All_Button()
          self.state_action.pop()
     
     def Bouton_Retour(self):
+        """
+        Gère l'action du bouton retour afin de revenir à l'étape précédente ou de réinitialiser le jeu
+        """
         if len(self.state_action) > 1:
             self.Get_Last_State_Action()
         else:
             self.Reset_Jeu()
 
     def Get_Character_With_Button(self,Boutton):
+        """
+        Renvoie le personnage correspondant au bouton sélectionné
+        :param Boutton: (str) Nom du bouton sélectionné
+        :return: Objet personnage correspondant ou None si aucun personnage ne correspond
+        """
         for perso in PERSONNAGES:
             if perso.nom == Boutton:
                 return perso
 
     def Clickable_Func(self):
+        """
+        Analyse le bouton actuellement sélectionné par le joueur et déclenche l'action correspondante
+        """
         Boutton = self.Closest_Clickable_Func()
         if self.Winner_Player and self.cache_images.get("winner") and self.cache_images["winner"]["frame"] >= 120:
             self.Reset_Jeu()
@@ -443,9 +588,18 @@ class Jeu_Affichage:
                     self.Players[self.IsPlaying]["Character"] = self.Get_Character_With_Button(Boutton)
                 
     def Remove_Filter(self,Button):
+        """
+        Supprime le filtre appliqué à une image et restaure son apparence originale
+        :param Button: (str) Nom de l'image
+        """
         self.cache_images[Button]["img"] = self.cache_images[Button]["original"].copy()
 
     def Create_Column_Button(self, Data:dict):
+        """
+        Crée un bouton dans une colonne de sélection d'adjectifs
+        :param Data: (dict) Dictionnaire contenant les paramètres du bouton
+        :return: Nouvelle position et index utilisés pour placer le bouton suivant
+        """
         Action_Param=Data["Action_Param"]
         Button = str(Data["Button"])
         color = Data.get("Color") and Data["Color"] or False
@@ -488,6 +642,10 @@ class Jeu_Affichage:
         return (x,y,i)
     
     def Create_Column(self, Data:dict):
+        """
+        Crée une colonne de boutons correspondant aux adjectifs disponibles
+        :param Data: (dict) Dictionnaire contenant la liste des adjectifs et les paramètres d'affichage
+        """
         list = Data["list"]
         column = (Data.get("column") and Data["column"] or 1) - 1
         LenList = len(list) + 1
@@ -512,12 +670,20 @@ class Jeu_Affichage:
            x,y,i = self.Create_Column_Button({"Action_Param": Action_Param, "Button": Button, "Color": self.Parametre["Color_List"][len(self.state_action) - 1], "i": i, "X": x, "Y": y, "IsAdjectif": True})
 
     def Afficher_Action(self):
+        """
+        Affiche les boutons permettant au joueur de choisir un adjectif
+        """
         self.Remove_Button_Start_Collidable()
         Color_List = self.Parametre["Color_List"]
         if len(self.state_action) > 0 and not self.Winner_Player:
             self.Create_Column({"list": self.Get_Last_Adjectif(), "column": 0, "color": Color_List[len(self.state_action) - 1]})
     
     def Setup_Player(self, Player,Bot = False):
+        """
+        Initialise les informations des joueurs
+        :param Player: (str) Le nom du 1er joueur
+        :param Bot: (bool) Indique si le 2nd joueur est joué automatiquement, par défaut à False
+        """
         if self.Players[Player] == {}:
             self.Players[Player]["Character"] = Bot and choice(list(PERSONNAGES)) or "INPUT"
             self.Players[Player]["Elemines"] = []
@@ -525,6 +691,9 @@ class Jeu_Affichage:
             self.Players[Player]["Bot"] = Bot
 
     def Playing_Bot(self):
+        """
+        Permet au bot de sélectionner automatiquement un adjectif et de jouer
+        """
         if self.Players[self.IsPlaying]["Bot"]:
             Chemin = self.Random_Adjectif()
             Adjectif = Chemin.pop()
@@ -532,6 +701,10 @@ class Jeu_Affichage:
             self.Remove_Adjectif(Adjectif)
             
     def GameMode(self, bot):
+        """
+        Gère le déroulement du jeu selon le mode choisi
+        :param bot: (bool) Indique si le second joueur est contrôlé par un bot ou non
+        """
         if self.state != "deviner" and self.Players["Player1"]["Character"] == "INPUT":
             if not self.cache_images.get("Player 1: Choisissez votre personnage" + "_Message"):
                 self.IsPlaying = "Player1"
@@ -546,14 +719,20 @@ class Jeu_Affichage:
             self.Afficher_Action()
 
     def deviner_state(self):
-            bot = self.state != "1vs1JOUEUR" and True or False
-            self.Setup_Player("Player1")
-            self.Setup_Player("Player2", bot)
-            self.Playing_Bot()
-            self.afficher()
-            self.GameMode(bot)
+        """
+        Gère l'état du jeu dans lequel les joueurs doivent deviner le personnage adverse
+        """
+        bot = self.state != "1vs1JOUEUR" and True or False
+        self.Setup_Player("Player1")
+        self.Setup_Player("Player2", bot)
+        self.Playing_Bot()
+        self.afficher()
+        self.GameMode(bot)
 
     def Winner(self):
+        """
+        Vérifie si un joueur a gagné la partie et affiche un message s'il a gagné
+        """
         elemines = self.Players[self.IsPlaying].get("Elemines") and self.Players[self.IsPlaying]["Elemines"]
         if elemines and len(elemines) >= len(PERSONNAGES) - 1:
             Text = (self.Players[self.IsPlaying]["Bot"] and "Bot" or self.IsPlaying) + "| Score : " + str(int(1 / (self.Players[self.IsPlaying]["Score"] or 1) * 100))
@@ -573,10 +752,16 @@ class Jeu_Affichage:
                 })
         
     def Remove_Button_Start_Collidable(self):
+        """
+        Supprime les zones cliquables associées aux boutons du menu principal
+        """
         for Button in self.Parametre["Button"]:
             self.Remove_Collidable(Button)
         
     def start_state(self):
+        """
+        Affiche les boutons du menu principal permettant de choisir le mode de jeu
+        """
         pos = 200
         for AllButton in self.Parametre["Button"]:
             self.Add_Boutton({
@@ -591,23 +776,35 @@ class Jeu_Affichage:
             pos -= 200
                 
     def Afficher_State(self):
+         """
+         Affiche l'écran correspondant à l'état actuel du jeu
+         """
          if self.state == "start":
             self.start_state()
          else:
             self.deviner_state()
 
     def Reset_Jeu(self):
+        """
+        Arrête la partie actuelle et prépare le redémarrage du jeu
+        """
         self.running = False
         self.restart = True
 
     def Events(self):
+        """
+        Analyse les événements pygame tels que les clics de souris ou la fermeture de la fenêtre
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 self.Clickable_Func()
 
-    def Transition(self):            
+    def Transition(self):   
+        """
+        Affiche une animation de transition entre deux états du jeu
+        """          
         if self.Parametre["IN_TRANSITION"]:
             self.Add_Boutton({
                 "Nom": "transition", 
@@ -620,11 +817,17 @@ class Jeu_Affichage:
                 })
             
     def Transition_Out(self):
-       if self.Parametre["IN_TRANSITION"] and "transition" in self.cache_images and self.cache_images["transition"]["offset"][0] >= self.xfull:
+        """
+        Termine l'animation de transition et réactive le jeu normal
+        """
+        if self.Parametre["IN_TRANSITION"] and "transition" in self.cache_images and self.cache_images["transition"]["offset"][0] >= self.xfull:
             self.cache_images["transition"]["offset"] = (-self.xfull*2, 0)
             self.Parametre["IN_TRANSITION"] = False
     
     def Background(self):
+        """
+        Affiche un fond d'écran
+        """
         backgroundtext = self.state == "1vs1JOUEUR" and str.lower(self.IsPlaying) or "background"
         background = self.Add_Boutton({
                 "Nom": backgroundtext, 
@@ -637,6 +840,9 @@ class Jeu_Affichage:
                 })
 
     def Lancer(self):
+        """
+        Lance la boucle principale du jeu et met à jour l'affichage à chaque image
+        """
         self.running = True
         while self.running:
             self.initialiser_fenetre()
@@ -653,6 +859,11 @@ class Jeu_Affichage:
             Jeu_Affichage()
 
     def Create_Texte(self, Data:dict):
+        """
+        Crée un texte destiné à être affiché à l'écran
+        :param Data: (dict) Dictionnaire contenant les paramètres du texte
+        :return: La surface contenant le texte généré
+        """
         Nom = Data["Nom"]
         Size = int(Data.get("Size") and Data["Size"] or 30) 
         Color = Data.get("Color") and Data["Color"] or (10, 10, 10)
@@ -666,12 +877,19 @@ class Jeu_Affichage:
         return self.Text[Nom].render(Data["Text"], True, Color)
     
     def Closest_Clickable_Func(self) -> str:
+        """
+        Renvoie le nom de l'élément cliquable actuellement situé sous la position de la souris
+        :return: (str) Le nom de l'élément détecté sous le curseur de la souris
+        """
         MousePos = pygame.mouse.get_pos()
         for perso, rect in self.Clickable.items():
             if rect.collidepoint(MousePos):
                 return perso
 
     def Affiche_Message(self):
+         '''
+         Permet l'affichage de message temporaire en bas a droite
+         '''
          if self.Parametre.get("MessageData"):
             Scale  = self.Parametre["MessageData"]["Scale"]
             Text  = self.Parametre["MessageData"]["Text"]
@@ -725,6 +943,16 @@ class Jeu_Affichage:
                         })
 
     def Message_On_Screen(self, Text:str, Duration:float=4,Scale:int=4, Color = (0,0,0), TextSize = 100, Outline = True):
+        """
+        Prépare l'affichage d'un message temporaire à l'écran
+        :param Text: (str) Le texte à afficher
+        :param Duration: (int or float) La durée d'affichage du texte en secondes
+        :param Scale: (int) La taille du message
+        :param Color: (tuple) La couleur du texte
+        :param TextSize: (int) La taille de la police
+        :param Outline: (bool) Indique si le texte possède un contour
+        :cu: La durée, la taille du message et de la police doivent être positifs
+        """
         DestroyFrame_Smoke = 4*4
         Speed = .5
         Duration_Message = Duration*60
