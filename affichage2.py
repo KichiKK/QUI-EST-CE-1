@@ -37,10 +37,11 @@ class Jeu_Affichage:
             "ELEMINE_OPACITE": 200,
             "TweenMoveLerp": .1,
             "LARGEUR": 140,
-            "HAUTEUR": 130,
+            "HAUTEUR": 100,
             "NB_PAR_LIGNE": 8,
             "ESPACEMENT": 10,
             "MARGE_BASSE": 46,
+            "Hauteur_Image": 15,
             "MAX_FPS": 60,
             "DELAY_STATE": .11,
             "IN_TRANSITION": False,
@@ -91,7 +92,7 @@ class Jeu_Affichage:
         Position = Data.get("Position") and Data["Position"] or (self.xfull/2,self.yfull/2)
         perso = Data["Nom"]
         boost = Data.get("Scale") and Data["Scale"] or 1
-        Size = Data.get("Size") and Data["Size"] or (self.Parametre["LARGEUR"], self.Parametre["HAUTEUR"])
+        Size = Data.get("Size") and Data["Size"] or (self.Parametre["LARGEUR"], self.Parametre["HAUTEUR"] + self.Parametre["Hauteur_Image"])
         Offset = Data.get("Offset") and  Data["Offset"] or (Position[0] + (randint(1,2) == 1 and self.xfull or -self.xfull), Position[1])
         goaloffset = Data.get("goaloffset") and Data["goaloffset"] or (0,0)
         MaxSizeTween = Data.get("MaxSizeTween") and Data["MaxSizeTween"] or self.Parametre["MaxSizeTween"]
@@ -349,7 +350,7 @@ class Jeu_Affichage:
                 perso = persoclass.nom
                 Boost = self.Get_Boost(perso)
 
-                Size_Finale = (self.Parametre["LARGEUR"] * Boost, (self.Parametre["HAUTEUR"] + self.Parametre["MARGE_BASSE"] - self.Parametre["MARGE_BASSE_ENTRE_PERSO"]) * Boost)
+                Size_Finale = (self.Parametre["LARGEUR"] * Boost, (self.Parametre["Hauteur_Image"] + self.Parametre["HAUTEUR"] + self.Parametre["MARGE_BASSE"] - self.Parametre["MARGE_BASSE_ENTRE_PERSO"]) * Boost)
 
                 surf = pygame.Surface(Size_Finale)
                 surf.fill((255, 255, 255))
@@ -359,7 +360,7 @@ class Jeu_Affichage:
 
                 nom = self.Create_Texte({"Nom": "Bold_Italic", "Text": perso, "Bold": True, "Italic": True})
 
-                surf.blit(nom, ((Size_Finale[0] - nom.get_width()) // 2, (self.Parametre["HAUTEUR"] * Boost) + 5))
+                surf.blit(nom, ((Size_Finale[0] - nom.get_width()) // 2, (self.Parametre["Hauteur_Image"] + self.Parametre["HAUTEUR"] * Boost) + 5))
                 surf = self.surface_arrondi(surf, self.Parametre["BORDER_RADIUS"])
 
                 surf = pygame.transform.scale(surf, Size_Finale)
@@ -690,7 +691,7 @@ class Jeu_Affichage:
 
         Action_Param = {
                 "X": -self.xfull/2 + self.Parametre["Size_BOUTTON"][0] / 2 , 
-                "Y": self.yfull*.265,
+                "Y": self.yfull*.24,
                 "Add_Y": self.Parametre["Size_BOUTTON"][1] + 10,
                 "Max_Button_Per_Column": 4,
                 "Column_Distance":(self.xfull / LenList ) * column,
@@ -912,6 +913,7 @@ class Jeu_Affichage:
             self.Transition_Out()
             pygame.display.flip()
             self.clock.tick(self.Parametre["MAX_FPS"])
+        pygame.quit()
         if self.restart:
             Jeu_Affichage()
 
